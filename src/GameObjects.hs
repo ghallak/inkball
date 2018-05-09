@@ -38,6 +38,12 @@ instance ToVec Velocity where
 data Block = Block TopLeft Color        deriving (Show, Eq)
 data Ball  = Ball Center Velocity Color deriving (Show, Eq)
 
+class ToCircle a where
+  toCircle :: a -> Circle Float
+
+instance ToCircle Ball where
+  toCircle (Ball center _ _) = Circle (toPoint center) ballRadius
+
 betweenCells :: Float
 betweenCells = 3
 

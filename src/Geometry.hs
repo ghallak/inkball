@@ -40,6 +40,9 @@ pointPlusVec (Point (px, py)) (Vec (vx, vy)) = Point (px + vx, py + vy)
 circleIntersectSeg :: (Floating a, Ord a) => Circle a -> Segment a -> Bool
 circleIntersectSeg (Circle center rad) seg = distance center (closestPointOnSeg center seg) ~<= rad
 
+circlesIntersect :: (Floating a, Ord a) => Circle a -> Circle a -> Bool
+circlesIntersect (Circle center rad) (Circle center' rad') = distance center center' ~<= rad + rad'
+
 pointOnSeg :: (Floating a, Ord a) => Point a -> Segment a -> Bool
 pointOnSeg c (Segment a b) = (distance a c + distance c b) ~== distance a b
 
