@@ -17,24 +17,26 @@ import Control.Concurrent     (threadDelay)
 
 
 
-nextState :: Ball -> [Block] -> Ball
-nextState ball blocks = case find (collide ball) blocks of
-                          Just block -> moveBall (afterCollide ball block)
-                          Nothing    -> moveBall ball
+nextState :: Ball -> [Ball] -> [Block] -> Ball
+nextState ball balls blocks = case find (collide ball) blocks of
+                                Just block -> moveBall (afterCollide ball block)
+                                Nothing    -> case find (collide ball) balls of
+                                                Just ball' -> moveBall (afterCollide ball ball')
+                                                Nothing    -> moveBall ball
 
 main :: IO ()
 main = do
   SDL.initializeAll
-  window <- SDL.createWindow (pack "My SDL Application") SDL.defaultWindow { SDL.windowInitialSize = SDL.V2 (35 * 17 - 3) (35 * 17 - 3) }
+  window <- SDL.createWindow (pack "Ink Ball") SDL.defaultWindow { SDL.windowInitialSize = SDL.V2 (35 * 17 - 3) (35 * 17 - 3) }
   renderer <- SDL.createRenderer window (-1) SDL.defaultRenderer
-  draw renderer (Ball (Center (70, 70)) (Velocity (1, 0.3)) Red)
-  --draw renderer (Ball (Center (70, 90)) Red (Speed 1) (Direction (1, 1)))
-  --draw renderer (Ball (Center (70, 70)) Red (Speed 1) (Direction (1, 0)))
-  --draw renderer (Ball (Center (70, 70)) Red (Speed 1) (Direction (0, 1)))
-  --draw renderer (Ball (Center (70, 70)) Red (Speed 1) (Direction (1, 1)))
+  draw renderer [ Ball (Center (70, 70)  ) (Velocity (1, 0.3)) Red
+                , Ball (Center (220, 220)) (Velocity (1, 1))   Blue
+                , Ball (Center (140, 160)) (Velocity (1, 0))   Green
+                , Ball (Center (120, 120)) (Velocity (2, 3.5)) Yellow
+                ]
 
-draw :: SDL.Renderer -> Ball -> IO ()
-draw renderer ball = do
+draw :: SDL.Renderer -> [Ball] -> IO ()
+draw renderer balls = do
   events <- SDL.pollEvents
   let eventIsQPress event =
         case SDL.eventPayload event of
@@ -48,12 +50,12 @@ draw renderer ball = do
   drawCells renderer
   board <- readBoard "game.txt" -- TODO: This should be done only once
   let blocks = createBlocks board -- TODO: This should be done only once
-  mapM_ (drawBlock renderer) blocks
+  drawBlocks renderer blocks
   --setColor renderer Red >> fillRectangle renderer (mkRect (35 * 3) (35 * 8) 64 64)
-  drawBall renderer ball
+  drawBalls renderer balls
   SDL.present renderer
   threadDelay 3000
-  unless qPressed (draw renderer (nextState ball blocks))
+  unless qPressed (draw renderer (nextState <$> balls <*> [balls] <*> [blocks]))
 
 -- TODO: Split into drawBall and drawCircle
 drawBall :: (Functor m, MonadIO m) => SDL.Renderer -> Ball -> m ()
@@ -66,10 +68,8 @@ drawBall renderer (Ball (Center (cx, cy)) _ color) = do
   mapM_ (SDL.drawPoint renderer) points
   -- TODO: Check Mid Point Circle algorithm to better draw the circle
 
-readGame :: String -> IO String
-readGame filename = do
-  contents <- readFile filename
-  return (concat $ lines contents)
+drawBalls :: (Functor m, MonadIO m) => SDL.Renderer -> [Ball] -> m ()
+drawBalls renderer = mapM_ (drawBall renderer)
 
 readBoard :: String -> IO [String]
 readBoard filename = do
@@ -101,6 +101,9 @@ drawCells renderer = do
 
 drawBlock :: MonadIO m => SDL.Renderer -> Block -> m ()
 drawBlock renderer (Block (TopLeft (t, l)) color) = setColor renderer color >> fillRectangle renderer (mkSquare (CTypes.CInt $ fromIntegral $ round t) (CTypes.CInt $ fromIntegral $ round l) (CTypes.CInt $ fromIntegral $ round blockSide))
+
+drawBlocks :: MonadIO m => SDL.Renderer -> [Block] -> m ()
+drawBlocks renderer = mapM_ (drawBlock renderer)
 
 mkSquare :: a -> a -> a -> SDL.Rectangle a
 mkSquare x y side = mkRect x y side side
