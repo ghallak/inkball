@@ -16,17 +16,17 @@ instance Collide Block where
                               Nothing -> ball
     where
       detectSide :: Ball -> Block -> Maybe BlockSide
-      detectSide (Ball (Center (cx, cy)) _ _) (Block (TopLeft (bx, by)) _)
-        | topIntersect    && leftIntersect  = if pointToSegEnds (Point (cx, cy)) topSeg < pointToSegEnds (Point (cx, cy)) leftSeg
+      detectSide (Ball circle _ _) (Block (Square (Point (bx, by)) _) _)
+        | topIntersect    && leftIntersect  = if pointToSegEnds center topSeg < pointToSegEnds center leftSeg
                                                  then Just TopSide
                                                  else Just LeftSide
-        | topIntersect    && rightIntersect = if pointToSegEnds (Point (cx, cy)) topSeg < pointToSegEnds (Point (cx, cy)) rightSeg
+        | topIntersect    && rightIntersect = if pointToSegEnds center topSeg < pointToSegEnds center rightSeg
                                                  then Just TopSide
                                                  else Just RightSide
-        | bottomIntersect && leftIntersect  = if pointToSegEnds (Point (cx, cy)) bottomSeg < pointToSegEnds (Point (cx, cy)) leftSeg
+        | bottomIntersect && leftIntersect  = if pointToSegEnds center bottomSeg < pointToSegEnds center leftSeg
                                                  then Just BottomSide
                                                  else Just LeftSide
-        | bottomIntersect && rightIntersect = if pointToSegEnds (Point (cx, cy)) bottomSeg < pointToSegEnds (Point (cx, cy)) rightSeg
+        | bottomIntersect && rightIntersect = if pointToSegEnds center bottomSeg < pointToSegEnds center rightSeg
                                                  then Just BottomSide
                                                  else Just RightSide
         | topIntersect    = Just TopSide
@@ -35,7 +35,8 @@ instance Collide Block where
         | rightIntersect  = Just RightSide
         | otherwise       = Nothing
         where
-          circle = Circle (toPoint $ Center (cx, cy)) ballRadius
+          center = getCenter circle
+          getCenter (Circle center _) = center
           topLeft     = Point (bx, by)
           topRight    = Point (bx + blockSide, by)
           bottomLeft  = Point (bx, by + blockSide)
@@ -50,15 +51,17 @@ instance Collide Block where
           rightIntersect  = circleIntersectSeg circle rightSeg
 
 instance Collide Ball where
-  collide ball ball' = ball /= ball' && circlesIntersect (toCircle ball) (toCircle ball')
+  collide ball ball' = ball /= ball' && circlesIntersect (getCircle ball) (getCircle ball')
+    where
+      getCircle (Ball circle _ _) = circle
 
-  afterCollide (Ball center _ color) (Ball _ v _) = Ball center v color
+  afterCollide (Ball circle _ color) (Ball _ v _) = Ball circle v color
 
 changeDirection :: Ball -> BlockSide -> Ball
-changeDirection (Ball cen (Velocity (dx, dy)) color) TopSide    = Ball cen (Velocity (dx, negate $ abs dy)) color
-changeDirection (Ball cen (Velocity (dx, dy)) color) BottomSide = Ball cen (Velocity (dx, abs dy)) color
-changeDirection (Ball cen (Velocity (dx, dy)) color) LeftSide   = Ball cen (Velocity (negate $ abs dx, dy)) color
-changeDirection (Ball cen (Velocity (dx, dy)) color) RightSide  = Ball cen (Velocity (abs dx, dy)) color
+changeDirection (Ball circle (Velocity (dx, dy)) color) TopSide    = Ball circle (Velocity (dx, negate $ abs dy)) color
+changeDirection (Ball circle (Velocity (dx, dy)) color) BottomSide = Ball circle (Velocity (dx, abs dy)) color
+changeDirection (Ball circle (Velocity (dx, dy)) color) LeftSide   = Ball circle (Velocity (negate $ abs dx, dy)) color
+changeDirection (Ball circle (Velocity (dx, dy)) color) RightSide  = Ball circle (Velocity (abs dx, dy)) color
 
 moveBall :: Ball -> Ball
-moveBall (Ball (Center (cx, cy)) (Velocity (vx, vy)) color) = Ball (Center (cx + vx, cy + vy)) (Velocity (vx, vy)) color
+moveBall (Ball (Circle (Point (cx, cy)) _) (Velocity (vx, vy)) color) = mkBall (cx + vx, cy + vy) (Velocity (vx, vy)) color

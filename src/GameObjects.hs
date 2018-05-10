@@ -16,33 +16,16 @@ data BlockSide = TopSide
                | LeftSide
                deriving (Show, Eq)
 
-newtype Center   = Center (Float, Float)   deriving (Show, Eq)
-newtype TopLeft  = TopLeft (Float, Float)  deriving (Show, Eq)
 newtype Velocity = Velocity (Float, Float) deriving (Show, Eq)
 
-class ToPoint a where
-  toPoint :: a -> Point Float
+data Block = Block (Square Float) Color         deriving (Show, Eq)
+data Ball  = Ball (Circle Float) Velocity Color deriving (Show, Eq)
 
-instance ToPoint Center where
-  toPoint (Center (x, y)) = Point (x, y)
+mkBlock :: (Float, Float) -> Color -> Block
+mkBlock (x, y) color = Block (Square (Point (x, y)) blockSide) color
 
-instance ToPoint TopLeft where
-  toPoint (TopLeft (x, y)) = Point (x, y)
-
-class ToVec a where
-  toVec :: a -> Vec Float
-
-instance ToVec Velocity where
-  toVec (Velocity (x, y)) = Vec (x, y)
-
-data Block = Block TopLeft Color        deriving (Show, Eq)
-data Ball  = Ball Center Velocity Color deriving (Show, Eq)
-
-class ToCircle a where
-  toCircle :: a -> Circle Float
-
-instance ToCircle Ball where
-  toCircle (Ball center _ _) = Circle (toPoint center) ballRadius
+mkBall :: (Float, Float) -> Velocity -> Color -> Ball
+mkBall (x, y) v color = Ball (Circle (Point (x, y)) ballRadius) v color
 
 betweenCells :: Float
 betweenCells = 3

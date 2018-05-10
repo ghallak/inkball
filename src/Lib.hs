@@ -30,10 +30,10 @@ main = do
   SDL.initializeAll
   window <- SDL.createWindow (pack "Ink Ball") SDL.defaultWindow { SDL.windowInitialSize = SDL.V2 (35 * 17 - 3) (35 * 17 - 3) }
   renderer <- SDL.createRenderer window (-1) SDL.defaultRenderer
-  draw renderer [ Ball (Center (70, 70)  ) (Velocity (1, 0.3)) Red
-                , Ball (Center (220, 220)) (Velocity (1, 1))   Blue
-                , Ball (Center (140, 160)) (Velocity (1, 0))   Green
-                , Ball (Center (120, 120)) (Velocity (2, 3.5)) Yellow
+  draw renderer [ mkBall (70, 70) (Velocity (1, 0.3)) Red
+                , mkBall (220, 220) (Velocity (1, 1))   Blue
+                , mkBall (140, 160) (Velocity (1, 0))   Green
+                , mkBall (120, 120) (Velocity (2, 3.5)) Yellow
                 ]
 
 draw :: SDL.Renderer -> [Ball] -> IO ()
@@ -72,7 +72,7 @@ drawBall :: (Functor m, MonadIO m) => SDL.Renderer -> Ball -> m ()
 toFloat :: CInt -> Float
 toFloat = fromIntegral
 
-drawBall renderer (Ball (Center (cx, cy)) _ color) = do
+drawBall renderer (Ball (Circle (Point (cx, cy)) _) _ color) = do
   let side    = 1
       rects = mkRect <$> map (round (cx - ballRadius) + ) (map (side *) [0..round (2 * ballRadius)]) <*> map (round (cy - ballRadius) + ) (map (side *) [0..round (2 * ballRadius)]) <*> [side] <*> [side]
       insideCircle :: SDL.Rectangle CInt -> Bool
@@ -90,7 +90,7 @@ readBoard filename = do
   return (lines contents)
 
 createBlocks :: [String] -> [Block]
-createBlocks board = [Block (TopLeft (x, y)) color
+createBlocks board = [mkBlock (x, y) color
                        | (row, line) <- enumerate board
                        , (col, cell) <- enumerate line
                        , cell /= '.'
@@ -113,7 +113,7 @@ drawCells renderer = do
   mapM_ (fillRectangle renderer) rects
 
 drawBlock :: MonadIO m => SDL.Renderer -> Block -> m ()
-drawBlock renderer (Block (TopLeft (t, l)) color) = setColor renderer color >> fillRectangle renderer (mkSquare (CTypes.CInt $ fromIntegral $ round t) (CTypes.CInt $ fromIntegral $ round l) (CTypes.CInt $ fromIntegral $ round blockSide))
+drawBlock renderer (Block (Square (Point (t, l)) _) color) = setColor renderer color >> fillRectangle renderer (mkSquare (CTypes.CInt $ fromIntegral $ round t) (CTypes.CInt $ fromIntegral $ round l) (CTypes.CInt $ fromIntegral $ round blockSide))
 
 drawBlocks :: MonadIO m => SDL.Renderer -> [Block] -> m ()
 drawBlocks renderer = mapM_ (drawBlock renderer)

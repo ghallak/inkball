@@ -4,7 +4,8 @@ newtype Point a = Point (a, a) deriving (Show, Eq)
 newtype Vec a   = Vec (a, a)   deriving (Show, Eq)
 
 data Segment a = Segment (Point a) (Point a) deriving (Show, Eq)
-data Circle a  = Circle (Point a) a          deriving (Show, Eq)
+data Circle  a = Circle  (Point a) a         deriving (Show, Eq)
+data Square  a = Square  (Point a) a         deriving (Show, Eq)
 
 instance Num a => Num (Point a) where
   Point (x, y) + Point (x', y') = Point (x + x', y + y')
