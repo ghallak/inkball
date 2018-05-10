@@ -5,6 +5,7 @@ import qualified Foreign.C.Types as CTypes
 
 import GameObjects
 import Physics
+import Geometry
 
 import Control.Monad          (unless)
 import Data.Text              (pack)
@@ -54,19 +55,31 @@ draw renderer balls = do
   --setColor renderer Red >> fillRectangle renderer (mkRect (35 * 3) (35 * 8) 64 64)
   drawBalls renderer balls
   SDL.present renderer
-  threadDelay 3000
+  threadDelay 10000
   unless qPressed (draw renderer (nextState <$> balls <*> [balls] <*> [blocks]))
 
 -- TODO: Split into drawBall and drawCircle
 drawBall :: (Functor m, MonadIO m) => SDL.Renderer -> Ball -> m ()
-drawBall renderer (Ball (Center (cx, cy)) _ color) = do
+{-drawBall renderer (Ball (Center (cx, cy)) _ color) = do
   let angles = takeWhile (< 2 * pi) (map (1 / ballRadius *) [0..])
   let xs = map (cx +) (map (ballRadius *) (map cos angles))
   let ys = map (cy +) (map (ballRadius *) (map sin angles))
   let points = zipWith (\x y -> SDL.P (SDL.V2 (round x) (round y))) xs ys
   setColor renderer color
   mapM_ (SDL.drawPoint renderer) points
-  -- TODO: Check Mid Point Circle algorithm to better draw the circle
+  -- TODO: Check Mid Point Circle algorithm to better draw the circle-}
+
+toFloat :: CInt -> Float
+toFloat = fromIntegral
+
+drawBall renderer (Ball (Center (cx, cy)) _ color) = do
+  let side    = 1
+      rects = mkRect <$> map (round (cx - ballRadius) + ) (map (side *) [0..round (2 * ballRadius)]) <*> map (round (cy - ballRadius) + ) (map (side *) [0..round (2 * ballRadius)]) <*> [side] <*> [side]
+      insideCircle :: SDL.Rectangle CInt -> Bool
+      insideCircle (SDL.Rectangle (SDL.P (SDL.V2 x y)) _) = distance (Point (toFloat x, toFloat y)) (Point (cx, cy)) < ballRadius
+
+  setColor renderer color
+  mapM_ (fillRectangle renderer) (filter insideCircle rects)
 
 drawBalls :: (Functor m, MonadIO m) => SDL.Renderer -> [Ball] -> m ()
 drawBalls renderer = mapM_ (drawBall renderer)
