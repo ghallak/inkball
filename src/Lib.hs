@@ -6,6 +6,7 @@ import qualified Foreign.C.Types as CTypes
 import GameObjects
 import Physics
 import Geometry
+import Graphics
 
 import Control.Monad          (unless)
 import Data.Text              (pack)
@@ -30,14 +31,14 @@ main = do
   SDL.initializeAll
   window <- SDL.createWindow (pack "Ink Ball") SDL.defaultWindow { SDL.windowInitialSize = SDL.V2 (35 * 17 - 3) (35 * 17 - 3) }
   renderer <- SDL.createRenderer window (-1) SDL.defaultRenderer
-  draw renderer [ mkBall (70, 70) (Velocity (1, 0.3)) Red
-                , mkBall (220, 220) (Velocity (1, 1))   Blue
-                , mkBall (140, 160) (Velocity (1, 0))   Green
-                , mkBall (120, 120) (Velocity (2, 3.5)) Yellow
-                ]
+  gameLoop renderer [ mkBall (70, 70) (Velocity (1, 0.3)) Red
+                    , mkBall (220, 220) (Velocity (1, 1))   Blue
+                    , mkBall (140, 160) (Velocity (1, 0))   Green
+                    , mkBall (120, 120) (Velocity (2, 3.5)) Yellow
+                    ]
 
-draw :: SDL.Renderer -> [Ball] -> IO ()
-draw renderer balls = do
+gameLoop :: SDL.Renderer -> [Ball] -> IO ()
+gameLoop renderer balls = do
   events <- SDL.pollEvents
   let eventIsQPress event =
         case SDL.eventPayload event of
@@ -51,38 +52,12 @@ draw renderer balls = do
   drawCells renderer
   board <- readBoard "game.txt" -- TODO: This should be done only once
   let blocks = createBlocks board -- TODO: This should be done only once
-  drawBlocks renderer blocks
+  draw renderer blocks
   --setColor renderer Red >> fillRectangle renderer (mkRect (35 * 3) (35 * 8) 64 64)
-  drawBalls renderer balls
+  draw renderer balls
   SDL.present renderer
-  threadDelay 10000
-  unless qPressed (draw renderer (nextState <$> balls <*> [balls] <*> [blocks]))
-
--- TODO: Split into drawBall and drawCircle
-drawBall :: (Functor m, MonadIO m) => SDL.Renderer -> Ball -> m ()
-{-drawBall renderer (Ball (Center (cx, cy)) _ color) = do
-  let angles = takeWhile (< 2 * pi) (map (1 / ballRadius *) [0..])
-  let xs = map (cx +) (map (ballRadius *) (map cos angles))
-  let ys = map (cy +) (map (ballRadius *) (map sin angles))
-  let points = zipWith (\x y -> SDL.P (SDL.V2 (round x) (round y))) xs ys
-  setColor renderer color
-  mapM_ (SDL.drawPoint renderer) points
-  -- TODO: Check Mid Point Circle algorithm to better draw the circle-}
-
-toFloat :: CInt -> Float
-toFloat = fromIntegral
-
-drawBall renderer (Ball (Circle (Point (cx, cy)) _) _ color) = do
-  let side    = 1
-      rects = mkRect <$> map (round (cx - ballRadius) + ) (map (side *) [0..round (2 * ballRadius)]) <*> map (round (cy - ballRadius) + ) (map (side *) [0..round (2 * ballRadius)]) <*> [side] <*> [side]
-      insideCircle :: SDL.Rectangle CInt -> Bool
-      insideCircle (SDL.Rectangle (SDL.P (SDL.V2 x y)) _) = distance (Point (toFloat x, toFloat y)) (Point (cx, cy)) < ballRadius
-
-  setColor renderer color
-  mapM_ (fillRectangle renderer) (filter insideCircle rects)
-
-drawBalls :: (Functor m, MonadIO m) => SDL.Renderer -> [Ball] -> m ()
-drawBalls renderer = mapM_ (drawBall renderer)
+  threadDelay 300
+  unless qPressed (gameLoop renderer (nextState <$> balls <*> [balls] <*> [blocks]))
 
 readBoard :: String -> IO [String]
 readBoard filename = do
@@ -105,36 +80,3 @@ createBlocks board = [mkBlock (x, y) color
                           charToColor 'B' = Blue
                           charToColor 'Y' = Yellow
                           charToColor _   = Gray
-
-drawCells :: MonadIO m => SDL.Renderer -> m ()
-drawCells renderer = do
-  let rects = mkRect <$> (map (35*) [0..16]) <*> (map (35*) [0..16]) <*> [32] <*> [32]
-  setColor renderer DarkGray
-  mapM_ (fillRectangle renderer) rects
-
-drawBlock :: MonadIO m => SDL.Renderer -> Block -> m ()
-drawBlock renderer (Block (Square (Point (t, l)) _) color) = setColor renderer color >> fillRectangle renderer (mkSquare (CTypes.CInt $ fromIntegral $ round t) (CTypes.CInt $ fromIntegral $ round l) (CTypes.CInt $ fromIntegral $ round blockSide))
-
-drawBlocks :: MonadIO m => SDL.Renderer -> [Block] -> m ()
-drawBlocks renderer = mapM_ (drawBlock renderer)
-
-mkSquare :: a -> a -> a -> SDL.Rectangle a
-mkSquare x y side = mkRect x y side side
-
-mkRect :: a -> a -> a -> a -> SDL.Rectangle a
-mkRect x y w h = SDL.Rectangle o z
-  where
-    o = SDL.P (SDL.V2 x y)
-    z = SDL.V2 w h
-
-fillRectangle :: (MonadIO m) => SDL.Renderer -> SDL.Rectangle CInt -> m ()
-fillRectangle r s = SDL.fillRect r (Just s)
-
-setColor :: (MonadIO m) => SDL.Renderer -> Color -> m ()
-setColor r White    = SDL.rendererDrawColor r $= SDL.V4 maxBound maxBound maxBound maxBound
-setColor r Red      = SDL.rendererDrawColor r $= SDL.V4 maxBound 0 0 maxBound
-setColor r Green    = SDL.rendererDrawColor r $= SDL.V4 0 maxBound 0 maxBound
-setColor r Blue     = SDL.rendererDrawColor r $= SDL.V4 0 0 maxBound maxBound
-setColor r Yellow   = SDL.rendererDrawColor r $= SDL.V4 maxBound maxBound 0 maxBound
-setColor r Gray     = SDL.rendererDrawColor r $= SDL.V4 204 204 204 maxBound
-setColor r DarkGray = SDL.rendererDrawColor r $= SDL.V4 191 191 191 maxBound

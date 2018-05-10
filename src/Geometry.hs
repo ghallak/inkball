@@ -44,6 +44,31 @@ circleIntersectSeg (Circle center rad) seg = distance center (closestPointOnSeg 
 circlesIntersect :: (Floating a, Ord a) => Circle a -> Circle a -> Bool
 circlesIntersect (Circle center rad) (Circle center' rad') = distance center center' ~<= rad + rad'
 
+pointInCircle :: (Floating a, Ord a) => Point a -> Circle a -> Bool
+pointInCircle point (Circle center radius) = distance point center ~<= radius
+
+squareInsideCircle :: (Floating a, Ord a) => Square a -> Circle a -> Bool
+squareInsideCircle square circle = all (\v -> pointInCircle v circle) (vertices square)
+
+vertices :: Num a => Square a -> [Point a]
+vertices square = [ topLeftVertex square
+                  , topRightVertex square
+                  , bottomLeftVertex square
+                  , bottomRightVertex square
+                  ]
+
+topLeftVertex :: Num a => Square a -> Point a
+topLeftVertex (Square point _) = point
+
+topRightVertex :: Num a => Square a -> Point a
+topRightVertex (Square point side) = point + Point (side, 0)
+
+bottomLeftVertex :: Num a => Square a -> Point a
+bottomLeftVertex (Square point side) = point + Point (0, side)
+
+bottomRightVertex :: Num a => Square a -> Point a
+bottomRightVertex (Square point side) = point + Point (side, side)
+
 pointOnSeg :: (Floating a, Ord a) => Point a -> Segment a -> Bool
 pointOnSeg c (Segment a b) = (distance a c + distance c b) ~== distance a b
 
