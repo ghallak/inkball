@@ -8,6 +8,7 @@ import Physics
 import Geometry
 import Graphics
 
+import Data.Maybe             (isJust, fromJust)
 import Control.Monad          (unless)
 import Data.Text              (pack)
 import Data.List              (find)
@@ -19,12 +20,15 @@ import Control.Concurrent     (threadDelay)
 
 
 
-nextState :: Ball -> [Ball] -> [Block] -> Ball
-nextState ball balls blocks = case find (collide ball) blocks of
-                                Just block -> moveBall (afterCollide ball block)
-                                Nothing    -> case find (collide ball) balls of
-                                                Just ball' -> moveBall (afterCollide ball ball')
-                                                Nothing    -> moveBall ball
+nextState :: Ball -> [Ball] -> [Block] -> [Sink] -> Maybe Ball
+nextState ball balls blocks sinks =
+  case find (collide ball) sinks of
+    Just _  -> Nothing
+    Nothing -> case find (collide ball) blocks of
+                 Just block -> Just $ moveBall (afterCollide ball block)
+                 Nothing    -> case find (collide ball) balls of
+                                 Just ball' -> Just $ moveBall (afterCollide ball ball')
+                                 Nothing    -> Just $ moveBall ball
 
 main :: IO ()
 main = do
@@ -52,12 +56,15 @@ gameLoop renderer balls = do
   drawCells renderer
   board <- readBoard "game.txt" -- TODO: This should be done only once
   let blocks = createBlocks board -- TODO: This should be done only once
+      sinks  = createSinks board
   draw renderer blocks
+  draw renderer sinks
   --setColor renderer Red >> fillRectangle renderer (mkRect (35 * 3) (35 * 8) 64 64)
   draw renderer balls
   SDL.present renderer
-  threadDelay 300
-  unless qPressed (gameLoop renderer (nextState <$> balls <*> [balls] <*> [blocks]))
+  threadDelay 10000
+  let nextStateBalls = map fromJust (filter isJust (nextState <$> balls <*> [balls] <*> [blocks] <*> [sinks]))
+  unless qPressed (gameLoop renderer nextStateBalls)
 
 readBoard :: String -> IO [String]
 readBoard filename = do
@@ -66,17 +73,34 @@ readBoard filename = do
 
 createBlocks :: [String] -> [Block]
 createBlocks board = [mkBlock (x, y) color
+                        | (row, line) <- enumerate board
+                        , (col, cell) <- enumerate line
+                        , elem cell ['W', 'R', 'G', 'B', 'Y']
+                        , let color = charToColor cell
+                              x     = (betweenCells + blockSide) * col
+                              y     = (betweenCells + blockSide) * row]
+                         where
+                           enumerate = zip [0..]
+                           charToColor 'W' = White
+                           charToColor 'R' = Red
+                           charToColor 'G' = Green
+                           charToColor 'B' = Blue
+                           charToColor 'Y' = Yellow
+                           charToColor _   = Gray
+
+createSinks :: [String] -> [Sink]
+createSinks board = [mkSink (x, y) color
                        | (row, line) <- enumerate board
                        , (col, cell) <- enumerate line
-                       , cell /= '.'
+                       , elem cell ['w', 'r', 'g', 'b', 'y']
                        , let color = charToColor cell
                              x     = (betweenCells + blockSide) * col
                              y     = (betweenCells + blockSide) * row]
                         where
                           enumerate = zip [0..]
-                          charToColor 'W' = White
-                          charToColor 'R' = Red
-                          charToColor 'G' = Green
-                          charToColor 'B' = Blue
-                          charToColor 'Y' = Yellow
+                          charToColor 'w' = White
+                          charToColor 'r' = Red
+                          charToColor 'g' = Green
+                          charToColor 'b' = Blue
+                          charToColor 'y' = Yellow
                           charToColor _   = Gray

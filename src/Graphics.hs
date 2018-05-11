@@ -22,6 +22,9 @@ instance Draw Block where
 instance Draw Ball where
   draw r (Ball circle _ color) = drawCircle r circle color
 
+instance Draw Sink where
+  draw r (Sink square circle color) = drawSquare r square color >> drawCircle r circle Black
+
 drawCells :: MonadIO m => SDL.Renderer -> m ()
 drawCells renderer = do
   let rects = mkRect <$> (map (35*) [0..16]) <*> (map (35*) [0..16]) <*> [32] <*> [32]
@@ -70,5 +73,6 @@ setColor r Red      = SDL.rendererDrawColor r $= SDL.V4 maxBound 0 0 maxBound
 setColor r Green    = SDL.rendererDrawColor r $= SDL.V4 0 maxBound 0 maxBound
 setColor r Blue     = SDL.rendererDrawColor r $= SDL.V4 0 0 maxBound maxBound
 setColor r Yellow   = SDL.rendererDrawColor r $= SDL.V4 maxBound maxBound 0 maxBound
+setColor r Black    = SDL.rendererDrawColor r $= SDL.V4 0 0 0 maxBound
 setColor r Gray     = SDL.rendererDrawColor r $= SDL.V4 204 204 204 maxBound
 setColor r DarkGray = SDL.rendererDrawColor r $= SDL.V4 191 191 191 maxBound

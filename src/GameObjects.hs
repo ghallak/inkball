@@ -8,6 +8,7 @@ data Color     = White
                | Green
                | Yellow
                | Gray
+               | Black
                | DarkGray
                deriving (Show, Eq)
 data BlockSide = TopSide
@@ -18,8 +19,9 @@ data BlockSide = TopSide
 
 newtype Velocity = Velocity (Float, Float) deriving (Show, Eq)
 
-data Block = Block (Square Float) Color         deriving (Show, Eq)
-data Ball  = Ball (Circle Float) Velocity Color deriving (Show, Eq)
+data Block = Block (Square Float) Color               deriving (Show, Eq)
+data Ball  = Ball (Circle Float) Velocity Color       deriving (Show, Eq)
+data Sink  = Sink (Square Float) (Circle Float) Color deriving (Show, Eq)
 
 mkBlock :: (Float, Float) -> Color -> Block
 mkBlock (x, y) color = Block (Square (Point (x, y)) blockSide) color
@@ -27,11 +29,20 @@ mkBlock (x, y) color = Block (Square (Point (x, y)) blockSide) color
 mkBall :: (Float, Float) -> Velocity -> Color -> Ball
 mkBall (x, y) v color = Ball (Circle (Point (x, y)) ballRadius) v color
 
-betweenCells :: Float
-betweenCells = 3
+mkSink :: (Float, Float) -> Color -> Sink
+mkSink (x, y) color = Sink (Square (Point (x, y)) sinkSide) (Circle (Point (x + sinkSide / 2, y + sinkSide / 2)) sinkHoleRadius) color
 
-ballRadius   :: Float
-ballRadius   = 16
+betweenCells   :: Float
+betweenCells   = 3
 
-blockSide    :: Float
-blockSide    = 32
+ballRadius     :: Float
+ballRadius     = 16
+
+blockSide      :: Float
+blockSide      = 32
+
+sinkHoleRadius :: Float
+sinkHoleRadius = 24
+
+sinkSide       :: Float
+sinkSide       = 64

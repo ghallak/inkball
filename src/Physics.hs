@@ -57,6 +57,14 @@ instance Collide Ball where
 
   afterCollide (Ball circle _ color) (Ball _ v _) = Ball circle v color
 
+instance Collide Sink where
+  collide ball sink = circlesIntersect (getCircle ball) (getSinkCircle sink)
+    where
+      getCircle (Ball circle _ _) = circle
+      getSinkCircle (Sink _ circle _) = circle
+
+  afterCollide _ _ = mkBall (0, 0) (Velocity (0, 0)) Black
+
 changeDirection :: Ball -> BlockSide -> Ball
 changeDirection (Ball circle (Velocity (dx, dy)) color) TopSide    = Ball circle (Velocity (dx, negate $ abs dy)) color
 changeDirection (Ball circle (Velocity (dx, dy)) color) BottomSide = Ball circle (Velocity (dx, abs dy)) color
