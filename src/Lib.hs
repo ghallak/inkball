@@ -8,6 +8,7 @@ import Physics
 import Geometry
 import Graphics
 
+import Data.Bool              (bool)
 import Data.Maybe             (isJust, fromJust)
 import Control.Monad          (unless)
 import Data.Text              (pack)
@@ -20,15 +21,17 @@ import Control.Concurrent     (threadDelay)
 
 
 
-nextState :: Ball -> [Ball] -> [Block] -> [Sink] -> Maybe Ball
-nextState ball balls blocks sinks =
+nextState :: Ball -> [Ball] -> [Block] -> [Sink] -> [Ink] -> Maybe Ball
+nextState ball balls blocks sinks ink =
   case find (collide ball) sinks of
     Just _  -> Nothing
     Nothing -> case find (collide ball) blocks of
                  Just block -> Just $ moveBall (afterCollide ball block)
                  Nothing    -> case find (collide ball) balls of
                                  Just ball' -> Just $ moveBall (afterCollide ball ball')
-                                 Nothing    -> Just $ moveBall ball
+                                 Nothing    -> case find (collide ball) ink of
+                                                 Just inkDot -> Just $ moveBall (afterCollide ball inkDot)
+                                                 Nothing     -> Just $ moveBall ball
 
 main :: IO ()
 main = do
@@ -39,10 +42,10 @@ main = do
                     , mkBall (220, 220) (Velocity (1, 1))   Blue
                     , mkBall (140, 160) (Velocity (1, 0))   Green
                     , mkBall (120, 120) (Velocity (2, 3.5)) Yellow
-                    ]
+                    ] False []
 
-gameLoop :: SDL.Renderer -> [Ball] -> IO ()
-gameLoop renderer balls = do
+gameLoop :: SDL.Renderer -> [Ball] -> Bool -> [Ink] -> IO ()
+gameLoop renderer balls mouseState ink = do
   events <- SDL.pollEvents
   let eventIsQPress event =
         case SDL.eventPayload event of
@@ -51,20 +54,44 @@ gameLoop renderer balls = do
             SDL.keysymKeycode (SDL.keyboardEventKeysym keyboardEvent) == SDL.KeycodeQ
           _ -> False
       qPressed = any eventIsQPress events
+      eventIsMousePress event =
+        case SDL.eventPayload event of
+          SDL.MouseButtonEvent mouseEvent ->
+            SDL.mouseButtonEventButton mouseEvent == SDL.ButtonLeft &&
+            SDL.mouseButtonEventMotion mouseEvent == SDL.Pressed
+          _ -> False
+      mousePressed = any eventIsMousePress events
+      eventIsMouseRelease event =
+        case SDL.eventPayload event of
+          SDL.MouseButtonEvent mouseEvent ->
+            SDL.mouseButtonEventButton mouseEvent == SDL.ButtonLeft &&
+            SDL.mouseButtonEventMotion mouseEvent == SDL.Released
+          _ -> False
+      mouseReleased = any eventIsMouseRelease events
+
+  let newMouseState = if mousePressed
+                         then True
+                         else if mouseReleased
+                                 then False
+                                 else mouseState
+  mPos <- SDL.getAbsoluteMouseLocation
   setColor renderer Gray
   SDL.clear renderer
   drawCells renderer
   board <- readBoard "game.txt" -- TODO: This should be done only once
   let blocks = createBlocks board -- TODO: This should be done only once
       sinks  = createSinks board
+      toPoint ::SDL.Point SDL.V2 CInt -> (Float, Float)
+      toPoint (SDL.P (SDL.V2 x y)) = (fromIntegral x, fromIntegral y)
+  let newInk = bool ink ((mkInk $ toPoint mPos) : ink) (mouseState)
   draw renderer blocks
   draw renderer sinks
-  --setColor renderer Red >> fillRectangle renderer (mkRect (35 * 3) (35 * 8) 64 64)
   draw renderer balls
+  draw renderer newInk
   SDL.present renderer
   threadDelay 10000
-  let nextStateBalls = map fromJust (filter isJust (nextState <$> balls <*> [balls] <*> [blocks] <*> [sinks]))
-  unless qPressed (gameLoop renderer nextStateBalls)
+  let nextStateBalls = map fromJust (filter isJust (nextState <$> balls <*> [balls] <*> [blocks] <*> [sinks] <*> [newInk]))
+  unless qPressed (gameLoop renderer nextStateBalls newMouseState newInk)
 
 readBoard :: String -> IO [String]
 readBoard filename = do

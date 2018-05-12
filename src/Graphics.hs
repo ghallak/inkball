@@ -25,6 +25,9 @@ instance Draw Ball where
 instance Draw Sink where
   draw r (Sink square circle color) = drawSquare r square color >> drawCircle r circle Black
 
+instance Draw Ink where
+  draw r (Ink circle) = drawCircle r circle Black
+
 drawCells :: MonadIO m => SDL.Renderer -> m ()
 drawCells renderer = do
   let rects = mkRect <$> (map (35*) [0..16]) <*> (map (35*) [0..16]) <*> [32] <*> [32]

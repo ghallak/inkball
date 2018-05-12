@@ -65,6 +65,16 @@ instance Collide Sink where
 
   afterCollide _ _ = mkBall (0, 0) (Velocity (0, 0)) Black
 
+-- TODO: This isn't the correct behavior
+-- TODO: Handle the case when ink is placed inside a ball
+instance Collide Ink where
+  collide ball ink = circlesIntersect (getCircle ball) (getInkCircle ink)
+    where
+      getCircle (Ball circle _ _) = circle
+      getInkCircle (Ink circle) = circle
+
+  afterCollide (Ball circle (Velocity (x, y)) color) _ = Ball circle (Velocity (-x, -y)) color
+
 changeDirection :: Ball -> BlockSide -> Ball
 changeDirection (Ball circle (Velocity (dx, dy)) color) TopSide    = Ball circle (Velocity (dx, negate $ abs dy)) color
 changeDirection (Ball circle (Velocity (dx, dy)) color) BottomSide = Ball circle (Velocity (dx, abs dy)) color

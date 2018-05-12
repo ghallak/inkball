@@ -22,6 +22,7 @@ newtype Velocity = Velocity (Float, Float) deriving (Show, Eq)
 data Block = Block (Square Float) Color               deriving (Show, Eq)
 data Ball  = Ball (Circle Float) Velocity Color       deriving (Show, Eq)
 data Sink  = Sink (Square Float) (Circle Float) Color deriving (Show, Eq)
+data Ink   = Ink (Circle Float)                       deriving (Show, Eq)
 
 mkBlock :: (Float, Float) -> Color -> Block
 mkBlock (x, y) color = Block (Square (Point (x, y)) blockSide) color
@@ -32,8 +33,14 @@ mkBall (x, y) v color = Ball (Circle (Point (x, y)) ballRadius) v color
 mkSink :: (Float, Float) -> Color -> Sink
 mkSink (x, y) color = Sink (Square (Point (x, y)) sinkSide) (Circle (Point (x + sinkSide / 2, y + sinkSide / 2)) sinkHoleRadius) color
 
+mkInk :: (Float, Float) -> Ink
+mkInk (x, y) = Ink (Circle (Point (x, y)) inkRadius)
+
 betweenCells   :: Float
 betweenCells   = 3
+
+inkRadius      :: Float
+inkRadius      = 8
 
 ballRadius     :: Float
 ballRadius     = 16
