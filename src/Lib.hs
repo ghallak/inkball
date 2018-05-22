@@ -19,18 +19,22 @@ import SDL                    (($=))
 import System.IO              (readFile)
 import Control.Concurrent     (threadDelay)
 
+nextInkState :: InkLine -> [Ball] -> Maybe InkLine
+nextInkState inkLine balls =
+  if any (\ball -> collide ball inkLine) balls
+     then Nothing
+     else Just inkLine
 
-
-nextState :: Ball -> [Ball] -> [Block] -> [Sink] -> [Ink] -> Maybe Ball
-nextState ball balls blocks sinks ink =
+nextState :: Ball -> [Ball] -> [Block] -> [Sink] -> [InkLine] -> Maybe Ball
+nextState ball balls blocks sinks inkLines =
   case find (collide ball) sinks of
     Just _  -> Nothing
     Nothing -> case find (collide ball) blocks of
                  Just block -> Just $ moveBall (afterCollide ball block)
                  Nothing    -> case find (collide ball) balls of
                                  Just ball' -> Just $ moveBall (afterCollide ball ball')
-                                 Nothing    -> case find (collide ball) ink of
-                                                 Just inkDot -> Just $ moveBall (afterCollide ball inkDot)
+                                 Nothing    -> case find (collide ball) inkLines of
+                                                 Just inkLine -> Just $ moveBall (afterCollide ball inkLine)
                                                  Nothing     -> Just $ moveBall ball
 
 main :: IO ()
@@ -44,7 +48,7 @@ main = do
                     , mkBall (120, 120) (Velocity (2, 3.5)) Yellow
                     ] False []
 
-gameLoop :: SDL.Renderer -> [Ball] -> Bool -> [Ink] -> IO ()
+gameLoop :: SDL.Renderer -> [Ball] -> Bool -> [InkLine] -> IO ()
 gameLoop renderer balls mouseState ink = do
   events <- SDL.pollEvents
   let eventIsQPress event =
@@ -83,7 +87,11 @@ gameLoop renderer balls mouseState ink = do
       sinks  = createSinks board
       toPoint ::SDL.Point SDL.V2 CInt -> (Float, Float)
       toPoint (SDL.P (SDL.V2 x y)) = (fromIntegral x, fromIntegral y)
-  let newInk = bool ink ((mkInk $ toPoint mPos) : ink) (mouseState)
+      addDotToLine :: InkDot -> InkLine -> InkLine
+      addDotToLine dot (InkLine dots) = InkLine (dots ++ [dot])
+  let newInk = if mouseState
+                  then [addDotToLine (mkInkDot $ toPoint mPos) (bool (head ink) (InkLine []) (length ink == 0))]
+                  else ink
   draw renderer blocks
   draw renderer sinks
   draw renderer balls
@@ -91,7 +99,8 @@ gameLoop renderer balls mouseState ink = do
   SDL.present renderer
   threadDelay 10000
   let nextStateBalls = map fromJust (filter isJust (nextState <$> balls <*> [balls] <*> [blocks] <*> [sinks] <*> [newInk]))
-  unless qPressed (gameLoop renderer nextStateBalls newMouseState newInk)
+      nextStateInk   = map fromJust (filter isJust (nextInkState <$> newInk <*> [balls]))
+  unless qPressed (gameLoop renderer nextStateBalls newMouseState nextStateInk)
 
 readBoard :: String -> IO [String]
 readBoard filename = do

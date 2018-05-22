@@ -67,11 +67,20 @@ instance Collide Sink where
 
 -- TODO: This isn't the correct behavior
 -- TODO: Handle the case when ink is placed inside a ball
-instance Collide Ink where
-  collide ball ink = circlesIntersect (getCircle ball) (getInkCircle ink)
+instance Collide InkDot where
+  collide ball ink = circlesIntersect (getCircle ball) (getInkDotCircle ink)
     where
       getCircle (Ball circle _ _) = circle
-      getInkCircle (Ink circle) = circle
+      getInkDotCircle (InkDot circle) = circle
+
+  afterCollide (Ball circle (Velocity (x, y)) color) _ = Ball circle (Velocity (-x, -y)) color
+
+instance Collide InkLine where
+  collide ball inkLine = any (\inkDot -> collide ball inkDot) (toList inkLine)
+    where
+      -- TODO: Consider making InkLine Foldable to use it with `any`
+      toList :: InkLine -> [InkDot]
+      toList (InkLine dots) = dots
 
   afterCollide (Ball circle (Velocity (x, y)) color) _ = Ball circle (Velocity (-x, -y)) color
 
