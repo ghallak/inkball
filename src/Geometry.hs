@@ -26,6 +26,14 @@ infixl 4 ~<=
 dot :: Num a => Vec a -> Vec a -> a
 dot (Vec (x, y)) (Vec (x', y')) = x * x' + y * y'
 
+magnitude :: Floating a => Vec a -> a
+magnitude (Vec (x, y)) = sqrt (x ^ 2 + y ^ 2)
+
+normalize :: Floating a => Vec a -> Vec a
+normalize (Vec (x, y)) = Vec (x / mag, y / mag)
+  where
+    mag = magnitude (Vec (x, y))
+
 distance :: Floating a => Point a -> Point a -> a
 distance (Point (x, y)) (Point (x', y')) = sqrt ((x - x') ^ 2 + (y - y') ^ 2)
 

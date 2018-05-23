@@ -1,5 +1,6 @@
 module Physics where
 
+import Data.List (find)
 import GameObjects
 import Geometry
 
@@ -65,7 +66,6 @@ instance Collide Sink where
 
   afterCollide _ _ = mkBall (0, 0) (Velocity (0, 0)) Black
 
--- TODO: This isn't the correct behavior
 -- TODO: Handle the case when ink is placed inside a ball
 instance Collide InkDot where
   collide ball ink = circlesIntersect (getCircle ball) (getInkDotCircle ink)
@@ -73,7 +73,18 @@ instance Collide InkDot where
       getCircle (Ball circle _ _) = circle
       getInkDotCircle (InkDot circle) = circle
 
-  afterCollide (Ball circle (Velocity (x, y)) color) _ = Ball circle (Velocity (-x, -y)) color
+  -- https://gamedev.stackexchange.com/questions/112299/balls-velocity-vector-reflect-against-a-point
+  -- https://www.gamasutra.com/view/feature/131424/pool_hall_lessons_fast_accurate_.php?page=3
+  afterCollide (Ball ballCircle v color) (InkDot inkCircle) = Ball ballCircle v' color
+    where
+      v' = toVel $ (toVec v) `minus` multiplyByScalar n (2 * (dot (toVec v) n))
+      n  = normalize $ vecFromPoint (circlesTouchingPoint ballCircle inkCircle - circleCenter inkCircle)
+      -- TODO: Move this function to Geometry module
+      circlesTouchingPoint (Circle center radius) (Circle center' radius') = center + ((center' - center) * Point (radius / (radius + radius'), radius / (radius + radius')))
+      circleCenter (Circle center _) = center
+      toVec (Velocity (x, y)) = Vec (x, y)
+      toVel (Vec (x, y)) = Velocity (x, y)
+      minus (Vec (x, y)) (Vec (x', y')) = Vec (x - x', y - y')
 
 instance Collide InkLine where
   collide ball inkLine = any (\inkDot -> collide ball inkDot) (toList inkLine)
@@ -82,7 +93,13 @@ instance Collide InkLine where
       toList :: InkLine -> [InkDot]
       toList (InkLine dots) = dots
 
-  afterCollide (Ball circle (Velocity (x, y)) color) _ = Ball circle (Velocity (-x, -y)) color
+  afterCollide ball inkLine = case find (\inkDot -> collide ball inkDot) (toList inkLine) of
+                                Just inkDot -> afterCollide ball inkDot
+                                Nothing     -> ball
+    where
+      -- TODO: Consider making InkLine Foldable to use it with `any`
+      toList :: InkLine -> [InkDot]
+      toList (InkLine dots) = dots
 
 changeDirection :: Ball -> BlockSide -> Ball
 changeDirection (Ball circle (Velocity (dx, dy)) color) TopSide    = Ball circle (Velocity (dx, negate $ abs dy)) color
