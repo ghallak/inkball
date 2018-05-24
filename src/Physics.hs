@@ -53,25 +53,17 @@ instance Collide Block where
 
 instance Collide Ball where
   collide ball ball' = ball /= ball' && circlesIntersect (getCircle ball) (getCircle ball')
-    where
-      getCircle (Ball circle _ _) = circle
 
   afterCollide (Ball circle _ color) (Ball _ v _) = Ball circle v color
 
 instance Collide Sink where
-  collide ball sink = circlesIntersect (getCircle ball) (getSinkCircle sink)
-    where
-      getCircle (Ball circle _ _) = circle
-      getSinkCircle (Sink _ circle _) = circle
+  collide ball sink = circlesIntersect (getCircle ball) (getCircle sink)
 
   afterCollide _ _ = mkBall (0, 0) (Velocity (0, 0)) Black
 
 -- TODO: Handle the case when ink is placed inside a ball
 instance Collide InkDot where
-  collide ball ink = circlesIntersect (getCircle ball) (getInkDotCircle ink)
-    where
-      getCircle (Ball circle _ _) = circle
-      getInkDotCircle (InkDot circle) = circle
+  collide ball ink = circlesIntersect (getCircle ball) (getCircle ink)
 
   -- https://gamedev.stackexchange.com/questions/112299/balls-velocity-vector-reflect-against-a-point
   -- https://www.gamasutra.com/view/feature/131424/pool_hall_lessons_fast_accurate_.php?page=3

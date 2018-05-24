@@ -23,9 +23,20 @@ data Block = Block (Square Float) Color               deriving (Show, Eq)
 data Ball  = Ball (Circle Float) Velocity Color       deriving (Show, Eq)
 data Sink  = Sink (Square Float) (Circle Float) Color deriving (Show, Eq)
 
--- TODO: Consider removing InkDot and changing InkLine to `InkLine [Circle Float]`
 newtype InkDot  = InkDot (Circle Float)
 newtype InkLine = InkLine [InkDot]
+
+class Circular a where
+  getCircle :: a -> Circle Float
+
+instance Circular Ball where
+  getCircle (Ball circle _ _) = circle
+
+instance Circular Sink where
+  getCircle (Sink _ circle _) = circle
+
+instance Circular InkDot where
+  getCircle (InkDot circle) = circle
 
 mkBlock :: (Float, Float) -> Color -> Block
 mkBlock (x, y) color = Block (Square (Point (x, y)) blockSide) color
