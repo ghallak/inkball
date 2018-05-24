@@ -24,7 +24,7 @@ data Ball  = Ball (Circle Float) Velocity Color       deriving (Show, Eq)
 data Sink  = Sink (Square Float) (Circle Float) Color deriving (Show, Eq)
 
 newtype InkDot  = InkDot (Circle Float)
-newtype InkLine = InkLine [InkDot]
+type InkLine = [InkDot]
 
 class Circular a where
   getCircle :: a -> Circle Float

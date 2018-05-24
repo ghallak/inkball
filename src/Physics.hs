@@ -8,6 +8,15 @@ class Collide a where
   collide :: Ball -> a -> Bool
   afterCollide :: Ball -> a -> Ball
 
+instance Collide a => Collide [a] where
+  collide ball [] = False
+  collide ball (x : xs) = collide ball x || collide ball xs
+
+  afterCollide ball [] = ball
+  afterCollide ball (x : xs)
+    | collide ball x = afterCollide ball x
+    | otherwise      = afterCollide ball xs
+
 instance Collide Block where
   collide ball block = afterCollide ball block /= ball
 
@@ -77,21 +86,6 @@ instance Collide InkDot where
       toVec (Velocity (x, y)) = Vec (x, y)
       toVel (Vec (x, y)) = Velocity (x, y)
       minus (Vec (x, y)) (Vec (x', y')) = Vec (x - x', y - y')
-
-instance Collide InkLine where
-  collide ball inkLine = any (\inkDot -> collide ball inkDot) (toList inkLine)
-    where
-      -- TODO: Consider making InkLine Foldable to use it with `any`
-      toList :: InkLine -> [InkDot]
-      toList (InkLine dots) = dots
-
-  afterCollide ball inkLine = case find (\inkDot -> collide ball inkDot) (toList inkLine) of
-                                Just inkDot -> afterCollide ball inkDot
-                                Nothing     -> ball
-    where
-      -- TODO: Consider making InkLine Foldable to use it with `any`
-      toList :: InkLine -> [InkDot]
-      toList (InkLine dots) = dots
 
 changeDirection :: Ball -> BlockSide -> Ball
 changeDirection (Ball circle (Velocity (dx, dy)) color) TopSide    = Ball circle (Velocity (dx, negate $ abs dy)) color

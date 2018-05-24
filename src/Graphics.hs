@@ -28,9 +28,6 @@ instance Draw Sink where
 instance Draw InkDot where
   draw r (InkDot circle) = drawCircle r circle Black
 
-instance Draw InkLine where
-  draw r (InkLine inkDots) = draw r inkDots
-
 drawCells :: MonadIO m => SDL.Renderer -> m ()
 drawCells renderer = do
   let rects = mkRect <$> (map (35*) [0..16]) <*> (map (35*) [0..16]) <*> [32] <*> [32]
