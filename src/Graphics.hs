@@ -36,14 +36,22 @@ drawCells renderer = do
 
 drawCircle :: MonadIO m => SDL.Renderer -> Circle Float -> Color -> m ()
 drawCircle r (Circle (Point (cx, cy)) radius) color = do
-  let side = 1
-      circle = Circle (Point (cx, cy)) radius
-      squares = map (\x -> Square x side) (map Point ((,) <$> [cx - radius, cx - radius + side .. cx + radius] <*> [cy - radius, cy - radius + side .. cy + radius]))
-      filteredSquares = filter (\x -> squareInsideCircle x circle) squares
-      sdlSquares = map toRect filteredSquares
-
   setColor r color
-  mapM_ (fillRectangle r) sdlSquares
+  -- Midpoint Circle Algorithm
+  -- TODO: The circles are not round enough
+  drawCircle' (radius - 1) 0 1 1 (1 - radius * 2)
+    where
+      drawCircle' x y dx dy err
+        | x < y     = return ()
+        | otherwise = do
+            SDL.drawLine r (toSDLPoint $ Point (cx + x, cy + y)) (toSDLPoint $ Point (cx - x, cy + y))
+            SDL.drawLine r (toSDLPoint $ Point (cx + y, cy + x)) (toSDLPoint $ Point (cx - y, cy + x))
+            SDL.drawLine r (toSDLPoint $ Point (cx - x, cy - y)) (toSDLPoint $ Point (cx + x, cy - y))
+            SDL.drawLine r (toSDLPoint $ Point (cx - y, cy - x)) (toSDLPoint $ Point (cx + y, cy - x))
+
+            if err <= 0
+               then drawCircle' x (y + 1) dx (dy + 2) (err + dy)
+               else drawCircle' (x - 1) y (dx + 2) dy (err + dx - radius * 2)
 
 drawSquare :: MonadIO m => SDL.Renderer -> Square Float -> Color -> m ()
 drawSquare r square color = setColor r color >> fillRectangle r (toRect square)
