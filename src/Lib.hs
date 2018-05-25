@@ -89,9 +89,17 @@ gameLoop renderer balls mouseState ink = do
       toPoint (SDL.P (SDL.V2 x y)) = (fromIntegral x, fromIntegral y)
       addDotToLine :: InkDot -> InkLine -> InkLine
       addDotToLine dot line = line ++ [dot]
-  let newInk = if mouseState
-                  then [addDotToLine (mkInkDot $ toPoint mPos) (bool (head ink) ([]) (length ink == 0))]
-                  else ink
+      addDotToNewLine :: [InkLine] -> InkDot -> [InkLine]
+      addDotToNewLine lines dot = lines ++ [addDotToLine dot []]
+      addDotToLastLine :: [InkLine] -> InkDot -> [InkLine]
+      addDotToLastLine [] dot    = [addDotToLine dot []]
+      addDotToLastLine lines dot = init lines ++ [addDotToLine dot (last lines)]
+
+  let newInk = if not mouseState && newMouseState
+                  then addDotToNewLine ink (mkInkDot $ toPoint mPos)
+                  else if newMouseState
+                          then addDotToLastLine ink (mkInkDot $ toPoint mPos)
+                          else ink
   draw renderer blocks
   draw renderer sinks
   draw renderer balls
