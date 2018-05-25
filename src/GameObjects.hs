@@ -54,7 +54,7 @@ betweenCells   :: Float
 betweenCells   = 3
 
 inkRadius      :: Float
-inkRadius      = 8
+inkRadius      = 6
 
 ballRadius     :: Float
 ballRadius     = 16
