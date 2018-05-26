@@ -7,6 +7,7 @@ import GameObjects
 import Physics
 import Geometry
 import Graphics
+import Input
 
 import Data.Bool              (bool)
 import Data.Maybe             (isJust, fromJust)
@@ -17,7 +18,7 @@ import Control.Monad.IO.Class (MonadIO)
 import Foreign.C.Types        (CInt)
 import SDL                    (($=))
 import System.IO              (readFile)
-import Control.Concurrent     (threadDelay)
+import Control.Concurrent
 
 nextInkState :: InkLine -> [Ball] -> Maybe InkLine
 nextInkState inkLine balls =
@@ -45,42 +46,17 @@ main = do
   board <- readBoard "game.txt"
   let blocks = createBlocks board
       sinks  = createSinks board
+  mouseHeld <- newMVar False
+  forkIO $ inputHandler mouseHeld
   gameLoop renderer blocks sinks [ mkBall (70, 70)   (Velocity (1, 0.3)) Red
                                  , mkBall (220, 220) (Velocity (1, 1))   Blue
                                  , mkBall (140, 160) (Velocity (1, 0))   Green
                                  , mkBall (120, 120) (Velocity (2, 3.5)) Yellow
-                                 ] [] False
+                                 ] [] mouseHeld
 
-gameLoop :: SDL.Renderer -> [Block] -> [Sink] -> [Ball] -> [InkLine] -> Bool -> IO ()
-gameLoop renderer blocks sinks balls inkLines mouseState = do
-  events <- SDL.pollEvents
-  let eventIsQPress event =
-        case SDL.eventPayload event of
-          SDL.KeyboardEvent keyboardEvent ->
-            SDL.keyboardEventKeyMotion keyboardEvent == SDL.Pressed &&
-            SDL.keysymKeycode (SDL.keyboardEventKeysym keyboardEvent) == SDL.KeycodeQ
-          _ -> False
-      qPressed = any eventIsQPress events
-      eventIsMousePress event =
-        case SDL.eventPayload event of
-          SDL.MouseButtonEvent mouseEvent ->
-            SDL.mouseButtonEventButton mouseEvent == SDL.ButtonLeft &&
-            SDL.mouseButtonEventMotion mouseEvent == SDL.Pressed
-          _ -> False
-      mousePressed = any eventIsMousePress events
-      eventIsMouseRelease event =
-        case SDL.eventPayload event of
-          SDL.MouseButtonEvent mouseEvent ->
-            SDL.mouseButtonEventButton mouseEvent == SDL.ButtonLeft &&
-            SDL.mouseButtonEventMotion mouseEvent == SDL.Released
-          _ -> False
-      mouseReleased = any eventIsMouseRelease events
-
-  let newMouseState = if mousePressed
-                         then True
-                         else if mouseReleased
-                                 then False
-                                 else mouseState
+gameLoop :: SDL.Renderer -> [Block] -> [Sink] -> [Ball] -> [InkLine] -> MVar Bool -> IO ()
+gameLoop renderer blocks sinks balls inkLines mouseHeld = do
+  mouseState <- readMVar mouseHeld
   mPos <- SDL.getAbsoluteMouseLocation
   setColor renderer Gray
   SDL.clear renderer
@@ -95,11 +71,14 @@ gameLoop renderer blocks sinks balls inkLines mouseState = do
       addDotToLastLine [] dot    = [addDotToLine dot []]
       addDotToLastLine lines dot = init lines ++ [addDotToLine dot (last lines)]
 
-  let newInkLines = if not mouseState && newMouseState
-                       then addDotToNewLine inkLines (mkInkDot $ toPoint mPos)
-                       else if newMouseState
-                               then addDotToLastLine inkLines (mkInkDot $ toPoint mPos)
-                               else inkLines
+--  let newInkLines = if not mouseState && newMouseState
+--                       then addDotToNewLine inkLines (mkInkDot $ toPoint mPos)
+--                       else if newMouseState
+--                               then addDotToLastLine inkLines (mkInkDot $ toPoint mPos)
+--                               else inkLines
+  let newInkLines = if mouseState
+                       then addDotToLastLine inkLines (mkInkDot $ toPoint mPos)
+                       else inkLines
   draw renderer blocks
   draw renderer sinks
   draw renderer balls
@@ -108,7 +87,7 @@ gameLoop renderer blocks sinks balls inkLines mouseState = do
   threadDelay 10000
   let nextStateBalls = map fromJust (filter isJust (nextState <$> balls <*> [balls] <*> [blocks] <*> [sinks] <*> [newInkLines]))
       nextStateInk   = map fromJust (filter isJust (nextInkState <$> newInkLines <*> [balls]))
-  unless qPressed (gameLoop renderer blocks sinks nextStateBalls nextStateInk newMouseState)
+  gameLoop renderer blocks sinks nextStateBalls nextStateInk mouseHeld
 
 readBoard :: String -> IO [String]
 readBoard filename = do
