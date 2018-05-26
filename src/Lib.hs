@@ -42,14 +42,17 @@ main = do
   SDL.initializeAll
   window <- SDL.createWindow (pack "Ink Ball") SDL.defaultWindow { SDL.windowInitialSize = SDL.V2 (35 * 17 - 3) (35 * 17 - 3) }
   renderer <- SDL.createRenderer window (-1) SDL.defaultRenderer
-  gameLoop renderer [ mkBall (70, 70) (Velocity (1, 0.3)) Red
-                    , mkBall (220, 220) (Velocity (1, 1))   Blue
-                    , mkBall (140, 160) (Velocity (1, 0))   Green
-                    , mkBall (120, 120) (Velocity (2, 3.5)) Yellow
-                    ] False []
+  board <- readBoard "game.txt"
+  let blocks = createBlocks board
+      sinks  = createSinks board
+  gameLoop renderer blocks sinks [ mkBall (70, 70)   (Velocity (1, 0.3)) Red
+                                 , mkBall (220, 220) (Velocity (1, 1))   Blue
+                                 , mkBall (140, 160) (Velocity (1, 0))   Green
+                                 , mkBall (120, 120) (Velocity (2, 3.5)) Yellow
+                                 ] [] False
 
-gameLoop :: SDL.Renderer -> [Ball] -> Bool -> [InkLine] -> IO ()
-gameLoop renderer balls mouseState ink = do
+gameLoop :: SDL.Renderer -> [Block] -> [Sink] -> [Ball] -> [InkLine] -> Bool -> IO ()
+gameLoop renderer blocks sinks balls inkLines mouseState = do
   events <- SDL.pollEvents
   let eventIsQPress event =
         case SDL.eventPayload event of
@@ -82,10 +85,7 @@ gameLoop renderer balls mouseState ink = do
   setColor renderer Gray
   SDL.clear renderer
   drawCells renderer
-  board <- readBoard "game.txt" -- TODO: This should be done only once
-  let blocks = createBlocks board -- TODO: This should be done only once
-      sinks  = createSinks board
-      toPoint ::SDL.Point SDL.V2 CInt -> (Float, Float)
+  let toPoint ::SDL.Point SDL.V2 CInt -> (Float, Float)
       toPoint (SDL.P (SDL.V2 x y)) = (fromIntegral x, fromIntegral y)
       addDotToLine :: InkDot -> InkLine -> InkLine
       addDotToLine dot line = line ++ [dot]
@@ -95,20 +95,20 @@ gameLoop renderer balls mouseState ink = do
       addDotToLastLine [] dot    = [addDotToLine dot []]
       addDotToLastLine lines dot = init lines ++ [addDotToLine dot (last lines)]
 
-  let newInk = if not mouseState && newMouseState
-                  then addDotToNewLine ink (mkInkDot $ toPoint mPos)
-                  else if newMouseState
-                          then addDotToLastLine ink (mkInkDot $ toPoint mPos)
-                          else ink
+  let newInkLines = if not mouseState && newMouseState
+                       then addDotToNewLine inkLines (mkInkDot $ toPoint mPos)
+                       else if newMouseState
+                               then addDotToLastLine inkLines (mkInkDot $ toPoint mPos)
+                               else inkLines
   draw renderer blocks
   draw renderer sinks
   draw renderer balls
-  draw renderer newInk
+  draw renderer newInkLines
   SDL.present renderer
   threadDelay 10000
-  let nextStateBalls = map fromJust (filter isJust (nextState <$> balls <*> [balls] <*> [blocks] <*> [sinks] <*> [newInk]))
-      nextStateInk   = map fromJust (filter isJust (nextInkState <$> newInk <*> [balls]))
-  unless qPressed (gameLoop renderer nextStateBalls newMouseState nextStateInk)
+  let nextStateBalls = map fromJust (filter isJust (nextState <$> balls <*> [balls] <*> [blocks] <*> [sinks] <*> [newInkLines]))
+      nextStateInk   = map fromJust (filter isJust (nextInkState <$> newInkLines <*> [balls]))
+  unless qPressed (gameLoop renderer blocks sinks nextStateBalls nextStateInk newMouseState)
 
 readBoard :: String -> IO [String]
 readBoard filename = do
