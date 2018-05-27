@@ -53,7 +53,7 @@ main = do
                                  , mkBall (220, 220) (Velocity (1, 1))   Blue
                                  , mkBall (140, 160) (Velocity (1, 0))   Green
                                  , mkBall (120, 120) (Velocity (2, 3.5)) Yellow
-                                 ] [] mouseHeld quitPressed
+                                 ] [] mouseHeld quitPressed False
 
 renderGameObjects :: SDL.Renderer -> [Block] -> [Sink] -> [Ball] -> [InkLine] -> IO ()
 renderGameObjects r blocks sinks balls inkLines = do
@@ -66,8 +66,8 @@ renderGameObjects r blocks sinks balls inkLines = do
   draw r inkLines
   SDL.present r
 
-gameLoop :: SDL.Renderer -> [Block] -> [Sink] -> [Ball] -> [InkLine] -> MVar Bool -> MVar Bool -> IO ()
-gameLoop renderer blocks sinks balls inkLines mouseHeld quitPressedMVar = do
+gameLoop :: SDL.Renderer -> [Block] -> [Sink] -> [Ball] -> [InkLine] -> MVar Bool -> MVar Bool -> Bool -> IO ()
+gameLoop renderer blocks sinks balls inkLines mouseHeld quitPressedMVar lastMouseState = do
   mouseState <- readMVar mouseHeld
   mPos <- SDL.getAbsoluteMouseLocation
   let toPoint ::SDL.Point SDL.V2 CInt -> (Float, Float)
@@ -80,20 +80,17 @@ gameLoop renderer blocks sinks balls inkLines mouseHeld quitPressedMVar = do
       addDotToLastLine [] dot    = [addDotToLine dot []]
       addDotToLastLine lines dot = init lines ++ [addDotToLine dot (last lines)]
 
---  let newInkLines = if not mouseState && newMouseState
---                       then addDotToNewLine inkLines (mkInkDot $ toPoint mPos)
---                       else if newMouseState
---                               then addDotToLastLine inkLines (mkInkDot $ toPoint mPos)
---                               else inkLines
-  let newInkLines = if mouseState
-                       then addDotToLastLine inkLines (mkInkDot $ toPoint mPos)
-                       else inkLines
+  let newInkLines = if not lastMouseState && mouseState
+                       then addDotToNewLine inkLines (mkInkDot $ toPoint mPos)
+                       else if mouseState
+                               then addDotToLastLine inkLines (mkInkDot $ toPoint mPos)
+                               else inkLines
   renderGameObjects renderer blocks sinks balls newInkLines
   threadDelay 10000
   let nextStateBalls = map fromJust (filter isJust (nextState <$> balls <*> [balls] <*> [blocks] <*> [sinks] <*> [newInkLines]))
       nextStateInk   = map fromJust (filter isJust (nextInkState <$> newInkLines <*> [balls]))
   quitPressed <- readMVar quitPressedMVar
-  unless quitPressed $ gameLoop renderer blocks sinks nextStateBalls nextStateInk mouseHeld quitPressedMVar
+  unless quitPressed $ gameLoop renderer blocks sinks nextStateBalls nextStateInk mouseHeld quitPressedMVar mouseState
 
 readBoard :: String -> IO [String]
 readBoard filename = do
