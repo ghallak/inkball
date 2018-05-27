@@ -47,12 +47,13 @@ main = do
   let blocks = createBlocks board
       sinks  = createSinks board
   mouseHeld <- newMVar False
-  forkIO $ inputHandler mouseHeld
+  quitPressed <- newMVar False
+  forkIO $ inputHandler mouseHeld quitPressed
   gameLoop renderer blocks sinks [ mkBall (70, 70)   (Velocity (1, 0.3)) Red
                                  , mkBall (220, 220) (Velocity (1, 1))   Blue
                                  , mkBall (140, 160) (Velocity (1, 0))   Green
                                  , mkBall (120, 120) (Velocity (2, 3.5)) Yellow
-                                 ] [] mouseHeld
+                                 ] [] mouseHeld quitPressed
 
 renderGameObjects :: SDL.Renderer -> [Block] -> [Sink] -> [Ball] -> [InkLine] -> IO ()
 renderGameObjects r blocks sinks balls inkLines = do
@@ -65,8 +66,8 @@ renderGameObjects r blocks sinks balls inkLines = do
   draw r inkLines
   SDL.present r
 
-gameLoop :: SDL.Renderer -> [Block] -> [Sink] -> [Ball] -> [InkLine] -> MVar Bool -> IO ()
-gameLoop renderer blocks sinks balls inkLines mouseHeld = do
+gameLoop :: SDL.Renderer -> [Block] -> [Sink] -> [Ball] -> [InkLine] -> MVar Bool -> MVar Bool -> IO ()
+gameLoop renderer blocks sinks balls inkLines mouseHeld quitPressedMVar = do
   mouseState <- readMVar mouseHeld
   mPos <- SDL.getAbsoluteMouseLocation
   let toPoint ::SDL.Point SDL.V2 CInt -> (Float, Float)
@@ -91,7 +92,8 @@ gameLoop renderer blocks sinks balls inkLines mouseHeld = do
   threadDelay 10000
   let nextStateBalls = map fromJust (filter isJust (nextState <$> balls <*> [balls] <*> [blocks] <*> [sinks] <*> [newInkLines]))
       nextStateInk   = map fromJust (filter isJust (nextInkState <$> newInkLines <*> [balls]))
-  gameLoop renderer blocks sinks nextStateBalls nextStateInk mouseHeld
+  quitPressed <- readMVar quitPressedMVar
+  unless quitPressed $ gameLoop renderer blocks sinks nextStateBalls nextStateInk mouseHeld quitPressedMVar
 
 readBoard :: String -> IO [String]
 readBoard filename = do
