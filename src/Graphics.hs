@@ -1,4 +1,8 @@
-module Graphics where
+module Graphics
+       ( draw
+       , drawCells
+       , setColor
+       ) where
 
 import qualified SDL
 

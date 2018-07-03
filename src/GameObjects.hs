@@ -1,4 +1,20 @@
-module GameObjects where
+module GameObjects
+       ( Color (..)
+       , BlockSide (..)
+       , Velocity (..)
+       , Block (..)
+       , Ball (..)
+       , Sink (..)
+       , InkDot (..)
+       , InkLine
+       , getCircle
+       , mkBlock
+       , mkBall
+       , mkSink
+       , mkInkDot
+       , blockSide
+       , betweenCells
+       ) where
 
 import Geometry
 

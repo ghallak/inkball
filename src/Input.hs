@@ -1,4 +1,6 @@
-module Input where
+module Input
+       ( inputHandler
+       ) where
 
 import qualified SDL
 import Control.Monad      (void)

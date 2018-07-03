@@ -1,4 +1,17 @@
-module Geometry where
+module Geometry
+       ( Point (..)
+       , Vec (..)
+       , Segment (..)
+       , Circle (..)
+       , Square (..)
+       , normalize
+       , dot
+       , pointToSegEnds
+       , circleIntersectSeg
+       , circlesIntersect
+       , multiplyByScalar
+       , vecFromPoint
+       ) where
 
 newtype Point a = Point (a, a) deriving (Show, Eq)
 newtype Vec a   = Vec (a, a)   deriving (Show, Eq)

@@ -1,4 +1,8 @@
-module Physics where
+module Physics
+       ( collide
+       , afterCollide
+       , moveBall
+       ) where
 
 import Data.List (find)
 import GameObjects
