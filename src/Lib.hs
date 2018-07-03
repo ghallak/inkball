@@ -43,7 +43,6 @@ main = do
   SDL.initializeAll
   window <- SDL.createWindow (pack "Ink Ball") SDL.defaultWindow { SDL.windowInitialSize = SDL.V2 (35 * 17 - 3) (35 * 17 - 3) }
   renderer <- SDL.createRenderer window (-1) SDL.defaultRenderer
-  board <- readBoard "game.txt"
   let blocks = createBlocks board
       sinks  = createSinks board
   mouseHeld <- newMVar False
@@ -130,3 +129,22 @@ createSinks board = [mkSink (x, y) color
                           charToColor 'b' = Blue
                           charToColor 'y' = Yellow
                           charToColor _   = Gray
+
+board :: [String]
+board = [ "WWWWWWWWWWWWWWWWW"
+        , "W...............W"
+        , "W...............W"
+        , "W...............W"
+        , "W...........r#..W"
+        , "W...........##..W"
+        , "W...W...........W"
+        , "W...............W"
+        , "W...............W"
+        , "W........W......W"
+        , "W...............W"
+        , "W.........g#....W"
+        , "W.........##....W"
+        , "W...............W"
+        , "W...............W"
+        , "W...............W"
+        , "WWWWWWWWWWWWWWWWW"]
