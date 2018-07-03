@@ -3,8 +3,9 @@ module Input
        ) where
 
 import qualified SDL
+
 import Control.Monad      (void)
-import Control.Concurrent
+import Control.Concurrent (MVar, swapMVar)
 
 inputHandler :: MVar Bool -> MVar Bool -> IO ()
 inputHandler mouseHeld quitPressed = do

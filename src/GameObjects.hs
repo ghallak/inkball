@@ -16,7 +16,7 @@ module GameObjects
        , betweenCells
        ) where
 
-import Geometry
+import Geometry (Square (..), Circle (..), Point (..))
 
 data Color     = White
                | Red

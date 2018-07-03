@@ -10,8 +10,8 @@ import Control.Monad.IO.Class (MonadIO)
 import Foreign.C.Types        (CInt)
 import SDL                    (($=))
 
-import GameObjects
-import Geometry
+import GameObjects (Ball (..), Block (..), Sink (..), InkDot (..), Color (..))
+import Geometry (Circle (..), Point (..), Square (..))
 
 class Draw a where
   draw :: MonadIO m => SDL.Renderer -> a -> m ()

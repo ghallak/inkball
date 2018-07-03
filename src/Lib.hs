@@ -3,12 +3,6 @@ module Lib where
 import qualified SDL
 import qualified Foreign.C.Types as CTypes
 
-import GameObjects
-import Physics
-import Geometry
-import Graphics
-import Input
-
 import Data.Bool              (bool)
 import Data.Maybe             (isJust, fromJust)
 import Control.Monad          (unless)
@@ -18,7 +12,12 @@ import Control.Monad.IO.Class (MonadIO)
 import Foreign.C.Types        (CInt)
 import SDL                    (($=))
 import System.IO              (readFile)
-import Control.Concurrent
+import Control.Concurrent     (MVar, newMVar, readMVar, forkIO, threadDelay)
+
+import GameObjects (InkLine, InkDot, Ball, Sink, Block, Color (..), Velocity (..), mkBall, mkInkDot, betweenCells, mkBlock, blockSide, mkSink)
+import Physics (collide, afterCollide, moveBall)
+import Graphics (draw, drawCells, setColor)
+import Input (inputHandler)
 
 nextInkState :: InkLine -> [Ball] -> Maybe InkLine
 nextInkState inkLine balls =

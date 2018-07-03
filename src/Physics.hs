@@ -5,8 +5,9 @@ module Physics
        ) where
 
 import Data.List (find)
-import GameObjects
-import Geometry
+
+import GameObjects (Ball (..), Block (..), Velocity (..), InkDot (..), BlockSide (..), Color (Black), Sink, blockSide, getCircle, mkBall)
+import Geometry (Square (..), Point (..), Circle (..), Segment (..), Vec (..), pointToSegEnds, circleIntersectSeg, circlesIntersect, dot, multiplyByScalar, normalize, vecFromPoint)
 
 class Collide a where
   collide :: Ball -> a -> Bool
