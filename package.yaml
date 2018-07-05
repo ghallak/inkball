@@ -31,6 +31,11 @@ executables:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
+    - -Wall
+    - -Wcompat
+    - -Wincomplete-record-updates
+    - -Wincomplete-uni-patterns
+    - -Wredundant-constraints
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
@@ -42,6 +47,11 @@ tests:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
+    - -Wall
+    - -Wcompat
+    - -Wincomplete-record-updates
+    - -Wincomplete-uni-patterns
+    - -Wredundant-constraints
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
