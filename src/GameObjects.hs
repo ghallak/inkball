@@ -27,6 +27,7 @@ data Color     = White
                | Black
                | DarkGray
                deriving (Show, Eq)
+
 data BlockSide = TopSide
                | BottomSide
                | RightSide
@@ -40,6 +41,7 @@ data Ball  = Ball (Circle Float) Velocity Color       deriving (Show, Eq)
 data Sink  = Sink (Square Float) (Circle Float) Color deriving (Show, Eq)
 
 newtype InkDot  = InkDot (Circle Float)
+
 type InkLine = [InkDot]
 
 class Circular a where
@@ -66,20 +68,10 @@ mkSink (x, y) color = Sink (Square (Point (x, y)) sinkSide) (Circle (Point (x + 
 mkInkDot :: (Float, Float) -> InkDot
 mkInkDot (x, y) = InkDot (Circle (Point (x, y)) inkRadius)
 
-betweenCells   :: Float
+betweenCells, inkRadius, ballRadius, sinkHoleRadius, blockSide, sinkSide :: Float
 betweenCells   = 3
-
-inkRadius      :: Float
 inkRadius      = 6
-
-ballRadius     :: Float
 ballRadius     = 16
-
-blockSide      :: Float
-blockSide      = 32
-
-sinkHoleRadius :: Float
 sinkHoleRadius = 24
-
-sinkSide       :: Float
+blockSide      = 32
 sinkSide       = 64

@@ -14,7 +14,7 @@ module Geometry
        ) where
 
 newtype Point a = Point (a, a) deriving (Show, Eq)
-newtype Vec a   = Vec (a, a)   deriving (Show, Eq)
+newtype Vec   a = Vec   (a, a) deriving (Show, Eq)
 
 data Segment a = Segment (Point a) (Point a) deriving (Show, Eq)
 data Circle  a = Circle  (Point a) a         deriving (Show, Eq)
