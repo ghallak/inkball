@@ -11,7 +11,6 @@
     "purescript-console": "^4.2.0",
     "purescript-effect": "^2.0.1",
     "purescript-math": "^2.1.1",
-    "purescript-newtype": "^3.0.0",
     "purescript-maybe": "^4.0.1",
     "purescript-foldable-traversable": "^4.1.1"
   },

@@ -2,13 +2,11 @@ module GameObjects
   ( Color (..)
   , BlockSide (..)
   , Velocity (..)
-  , Block (..)
-  , Ball (..)
-  , Sink (..)
   , InkDot (..)
+  , Block
+  , Ball
+  , Sink
   , InkLine
-  , class Circular
-  , getCircle
   , mkBlock
   , mkBall
   , mkSink
@@ -18,10 +16,9 @@ module GameObjects
   ) where
 
 import Data.EuclideanRing ((/))
-import Data.Function (($))
 import Data.Semiring ((+))
 
-import Geometry (Square (..), Point (..), Circle (..), Vec)
+import Geometry (Circle, Square, Vec)
 
 data Color
   = White
@@ -41,18 +38,18 @@ data BlockSide
 
 newtype Velocity = Velocity Vec
 
-newtype Block = Block
+type Block =
   { square :: Square
   , color  :: Color
   }
 
-newtype Ball = Ball
+type Ball =
   { circle   :: Circle
   , velocity :: Velocity
   , color    :: Color
   }
 
-newtype Sink = Sink
+type Sink =
   { square :: Square
   , circle :: Circle
   , color  :: Color
@@ -62,31 +59,19 @@ newtype InkDot  = InkDot Circle
 
 type InkLine = Array InkDot
 
-class Circular a where
-  getCircle :: a -> Circle
-
-instance circularBall :: Circular Ball where
-  getCircle (Ball ball) = ball.circle
-
-instance circularSink :: Circular Sink where
-  getCircle (Sink sink) = sink.circle
-
-instance circularInkDot :: Circular InkDot where
-  getCircle (InkDot circle) = circle
-
 mkBlock :: {x :: Number, y :: Number} -> Color -> Block
-mkBlock xy color = Block
-  { square: Square
-      { topLeft: Point {x: xy.x, y: xy.y}
+mkBlock xy color =
+  { square:
+      { topLeft: {x: xy.x, y: xy.y}
       , side: blockSide
       }
   , color: color
   }
 
 mkBall :: {x :: Number, y :: Number} -> Velocity -> Color -> Ball
-mkBall xy vel color = Ball
-  { circle: Circle
-      { center: Point {x: xy.x, y: xy.y}
+mkBall xy vel color =
+  { circle:
+      { center: {x: xy.x, y: xy.y}
       , radius: ballRadius
       }
   , velocity: vel
@@ -94,21 +79,21 @@ mkBall xy vel color = Ball
   }
 
 mkSink :: {x :: Number, y :: Number} -> Color -> Sink
-mkSink xy color = Sink
-  { square: Square
-      { topLeft: Point {x: xy.x, y: xy.y}
+mkSink xy color =
+  { square:
+      { topLeft: {x: xy.x, y: xy.y}
       , side: sinkSide
       }
-  , circle: Circle
-      { center: Point {x: xy.x + sinkSide / 2.0, y: xy.y + sinkSide / 2.0}
+  , circle:
+      { center: {x: xy.x + sinkSide / 2.0, y: xy.y + sinkSide / 2.0}
       , radius: sinkHoleRadius
       }
   , color: color
   }
 
 mkInkDot :: {x :: Number, y :: Number} -> InkDot
-mkInkDot xy = InkDot $ Circle
-  { center: Point {x: xy.x, y: xy.y}
+mkInkDot xy = InkDot
+  { center: {x: xy.x, y: xy.y}
   , radius: inkRadius
   }
 
