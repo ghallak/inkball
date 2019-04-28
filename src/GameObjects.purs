@@ -17,6 +17,7 @@ module GameObjects
 
 import Data.EuclideanRing ((/))
 import Data.Semiring ((+))
+import Data.Show (class Show)
 
 import Geometry (Circle, Square, Vec)
 
@@ -29,6 +30,16 @@ data Color
   | Gray
   | Black
   | DarkGray
+
+instance showColor :: Show Color where
+  show White = "white"
+  show Red = "Red"
+  show Blue = "Blue"
+  show Green = "Green"
+  show Yellow = "Yellow"
+  show Gray = "Gray"
+  show Black = "Black"
+  show DarkGray = "DarkGray"
 
 data BlockSide
   = TopSide
