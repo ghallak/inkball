@@ -15,9 +15,8 @@ module GameObjects
   , betweenCells
   ) where
 
-import Data.EuclideanRing ((/))
-import Data.Semiring ((+))
-import Data.Show (class Show)
+import Prelude
+import Data.Int (toNumber)
 
 import Geometry (Circle, Square, Vec)
 
@@ -70,10 +69,13 @@ newtype InkDot  = InkDot Circle
 
 type InkLine = Array InkDot
 
-mkBlock :: {x :: Number, y :: Number} -> Color -> Block
-mkBlock xy color =
+mkBlock :: {row :: Int, col :: Int} -> Color -> Block
+mkBlock cor color =
   { square:
-      { topLeft: {x: xy.x, y: xy.y}
+      { topLeft:
+          { x: (blockSide + betweenCells) * toNumber cor.col
+          , y: (blockSide + betweenCells) * toNumber cor.row
+          }
       , side: blockSide
       }
   , color: color
