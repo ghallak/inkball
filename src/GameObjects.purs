@@ -1,7 +1,7 @@
 module GameObjects
   ( Color (..)
   , BlockSide (..)
-  , Velocity (..)
+  , Velocity
   , InkDot (..)
   , Block
   , Ball
@@ -47,7 +47,7 @@ data BlockSide
   | RightSide
   | LeftSide
 
-newtype Velocity = Velocity Vec
+type Velocity = Vec
 
 type Block =
   { square :: Square
