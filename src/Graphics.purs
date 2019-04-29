@@ -30,6 +30,7 @@ drawCircle ctx circle color = do
       radius = circle.radius
       clr = show color
   C.setFillStyle ctx clr
+  C.beginPath ctx
   C.arc ctx { x: cx, y: cy, radius: radius, start: 0.0, end: 2.0 * pi }
   C.fill ctx
 
