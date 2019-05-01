@@ -3,6 +3,7 @@ module GameObjects
   , BlockSide (..)
   , Velocity
   , InkDot (..)
+  , GameObjects
   , Block
   , Ball
   , Sink
@@ -17,6 +18,7 @@ module GameObjects
 
 import Prelude
 import Data.Int (toNumber)
+import Data.List (List)
 
 import Geometry (Circle, Square, Vec)
 
@@ -45,6 +47,13 @@ data BlockSide
   | BottomSide
   | RightSide
   | LeftSide
+
+type GameObjects =
+  { balls    :: List Ball
+  , blocks   :: List Block
+  , sinks    :: List Sink
+  , inkLines :: List InkLine
+  }
 
 type Velocity = Vec
 
