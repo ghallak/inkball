@@ -13,7 +13,7 @@ import Signal.DOM (animationFrame)
 
 import GameObjects (GameState, Sink, Ball, Block, Color(..), mkBlock, mkSink)
 import Graphics (drawBlock, drawBall, drawSink)
-import Physics (moveBall, collide, fallInSink)
+import Physics (moveBall, collide, fallInSink, ballCollideWithBall)
 
 canvasSide :: Number
 canvasSide = 592.0
@@ -28,9 +28,19 @@ initialBall =
   , color: Red
   }
 
+initialBall' :: Ball
+initialBall' =
+  { circle:
+      { center: { x: 200.0, y: 300.0 }
+      , radius: 10.0
+      }
+  , velocity: { x: -2.0, y: 1.5 }
+  , color: Green
+  }
+
 initialState :: GameState
 initialState =
-  { balls: initialBall : Nil
+  { balls: initialBall : initialBall' : Nil
   , blocks: fromFoldable generateBlocks
   , sinks: fromFoldable generateSinks
   , inkLines: Nil
@@ -42,15 +52,27 @@ gameSignal frames = foldp (\_ -> nextState) initialState frames
 nextState :: GameState -> GameState
 nextState gameState =
   let ballsNotInSinks = foldr notInSink gameState.balls gameState.sinks
-      newBalls = map (moveBall <<< afterCollisionWithBlocks) ballsNotInSinks
+      newBalls = map (moveBall <<< afterCollision) ballsNotInSinks
    in gameState { balls = newBalls }
   where
-    afterCollisionWithBlocks :: Ball -> Ball
-    afterCollisionWithBlocks ball = fromMaybe ball
-                                    <<< head
-                                    <<< catMaybes
-                                    <<< fromFoldable
-                                      $ map (collide ball) gameState.blocks
+    afterCollision :: Ball -> Ball
+    afterCollision = afterCollisionWithBlock <<< afterCollisionWithBall
+
+    afterCollisionWithBall :: Ball -> Ball
+    afterCollisionWithBall ball =
+      fromMaybe ball
+      <<< head
+      <<< catMaybes
+      <<< fromFoldable
+        $ map (ballCollideWithBall ball) gameState.balls
+
+    afterCollisionWithBlock :: Ball -> Ball
+    afterCollisionWithBlock ball =
+      fromMaybe ball
+      <<< head
+      <<< catMaybes
+      <<< fromFoldable
+        $ map (collide ball) gameState.blocks
 
     -- filter out the balls that felt into the sink
     notInSink :: Sink -> List Ball -> List Ball

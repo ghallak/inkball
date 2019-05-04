@@ -2,6 +2,7 @@ module Physics
   ( moveBall
   , collide
   , fallInSink
+  , ballCollideWithBall
   ) where
 
 import Prelude
@@ -72,3 +73,10 @@ changeDirection ball RightSide  = ball { velocity { x = abs ball.velocity.x } }
 
 fallInSink :: Sink -> Ball -> Boolean
 fallInSink sink ball = circlesIntersect sink.circle ball.circle
+
+ballCollideWithBall :: Ball -> Ball -> Maybe Ball
+ballCollideWithBall ball ball' =
+  let ballsCollide = circlesIntersect ball.circle ball'.circle
+   in if ball.circle /= ball'.circle && ballsCollide
+        then Just $ ball { velocity = ball'.velocity }
+        else Nothing
