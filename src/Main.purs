@@ -3,14 +3,40 @@ module Main where
 import Prelude
 import Effect (Effect, foreachE)
 import Graphics.Canvas as C
-import Data.List (List(..), fromFoldable, toUnfoldable, concat, (:))
-import Data.Maybe (Maybe(..))
+import Data.List
+  (List(..), fromFoldable, toUnfoldable, concat, (:), head, catMaybes)
+import Data.Maybe (Maybe(..), fromMaybe)
+import Signal (Signal, foldp, runSignal, (~>))
+import Signal.Time (Time)
+import Signal.DOM (animationFrame)
 
-import GameObjects (Sink, Block, Color(..), mkBlock, mkSink)
-import Graphics (drawBlock, drawSink)
+import GameObjects (Sink, Ball, Block, Color(..), mkBlock, mkSink)
+import Graphics (drawBlock, drawBall, drawSink)
+import Physics (moveBall, collide)
 
 canvasSide :: Number
 canvasSide = 592.0
+
+initialBall :: Ball
+initialBall =
+  { circle:
+      { center: { x: 100.0, y: 100.0 }
+      , radius: 10.0
+      }
+  , velocity: { x: 2.0, y: 1.0 }
+  , color: Red
+  }
+
+ballSignal :: Array Block -> Signal Time -> Signal Ball
+ballSignal blocks frames = foldp (\_ -> moveBall <<< f) initialBall frames
+  where
+    f :: Ball -> Ball
+    f ball = fromMaybe ball <<< head <<< catMaybes <<< fromFoldable $ map (collide ball) blocks
+
+drawAll :: C.Context2D -> Ball -> Effect Unit
+drawAll ctx ball = do
+  C.clearRect ctx { x: 0.0, y: 0.0, width: canvasSide, height: canvasSide }
+  drawBall ctx ball
 
 drawBackground :: Effect Unit
 drawBackground = do
@@ -64,7 +90,6 @@ generateBlocks = toUnfoldable <<< concat $ genRows 0 board
     genCols rowNum colNum ( _  : cols) = genCols rowNum (colNum + 1) cols
     genCols _      _      Nil          = Nil
 
-
 generateSinks :: Array Sink
 generateSinks = toUnfoldable <<< concat $ genRows 0 board
   where
@@ -81,3 +106,14 @@ generateSinks = toUnfoldable <<< concat $ genRows 0 board
 main :: Effect Unit
 main = do
   drawBackground
+  mcanvas <- C.getCanvasElementById "canvas-dynamic"
+  case mcanvas of
+    Just canvas -> do
+      C.setCanvasWidth canvas canvasSide
+      C.setCanvasHeight canvas canvasSide
+      ctx <- C.getContext2D canvas
+      let blocks = generateBlocks
+      frames <- animationFrame
+      runSignal $ (ballSignal blocks frames) ~> drawAll ctx
+      pure unit
+    Nothing -> pure unit
