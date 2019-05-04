@@ -3,7 +3,7 @@ module GameObjects
   , BlockSide (..)
   , Velocity
   , InkDot (..)
-  , GameObjects
+  , GameState
   , Block
   , Ball
   , Sink
@@ -48,7 +48,7 @@ data BlockSide
   | RightSide
   | LeftSide
 
-type GameObjects =
+type GameState =
   { balls    :: List Ball
   , blocks   :: List Block
   , sinks    :: List Sink

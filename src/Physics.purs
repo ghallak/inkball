@@ -1,14 +1,15 @@
 module Physics
   ( moveBall
   , collide
+  , fallInSink
   ) where
 
 import Prelude
 import Data.Maybe(Maybe(..))
 import Data.Ord(abs)
 
-import GameObjects (BlockSide(..), Ball, Block, blockSide)
-import Geometry (pointToSegEnds, circleIntersectSeg)
+import GameObjects (BlockSide(..), Ball, Block, Sink, blockSide)
+import Geometry (pointToSegEnds, circleIntersectSeg, circlesIntersect)
 
 moveBall :: Ball -> Ball
 moveBall ball =
@@ -68,3 +69,6 @@ changeDirection ball TopSide    = ball { velocity { y = negate $ abs ball.veloci
 changeDirection ball BottomSide = ball { velocity { y = abs ball.velocity.y } }
 changeDirection ball LeftSide   = ball { velocity { x = negate $ abs ball.velocity.x } }
 changeDirection ball RightSide  = ball { velocity { x = abs ball.velocity.x } }
+
+fallInSink :: Sink -> Ball -> Boolean
+fallInSink sink ball = circlesIntersect sink.circle ball.circle

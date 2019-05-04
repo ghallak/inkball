@@ -3,16 +3,17 @@ module Main where
 import Prelude
 import Effect (Effect, foreachE)
 import Graphics.Canvas as C
+import Data.Foldable (foldr)
 import Data.List
-  (List(..), fromFoldable, toUnfoldable, concat, (:), head, catMaybes)
+  (List(..), fromFoldable, toUnfoldable, concat, (:), head, catMaybes, filter)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Signal (Signal, foldp, runSignal, (~>))
 import Signal.Time (Time)
 import Signal.DOM (animationFrame)
 
-import GameObjects (Sink, Ball, Block, Color(..), mkBlock, mkSink)
+import GameObjects (GameState, Sink, Ball, Block, Color(..), mkBlock, mkSink)
 import Graphics (drawBlock, drawBall, drawSink)
-import Physics (moveBall, collide)
+import Physics (moveBall, collide, fallInSink)
 
 canvasSide :: Number
 canvasSide = 592.0
@@ -27,16 +28,38 @@ initialBall =
   , color: Red
   }
 
-ballSignal :: Array Block -> Signal Time -> Signal Ball
-ballSignal blocks frames = foldp (\_ -> moveBall <<< f) initialBall frames
-  where
-    f :: Ball -> Ball
-    f ball = fromMaybe ball <<< head <<< catMaybes <<< fromFoldable $ map (collide ball) blocks
+initialState :: GameState
+initialState =
+  { balls: initialBall : Nil
+  , blocks: fromFoldable generateBlocks
+  , sinks: fromFoldable generateSinks
+  , inkLines: Nil
+  }
 
-drawAll :: C.Context2D -> Ball -> Effect Unit
-drawAll ctx ball = do
+gameSignal :: Signal Time -> Signal GameState
+gameSignal frames = foldp (\_ -> nextState) initialState frames
+
+nextState :: GameState -> GameState
+nextState gameState =
+  let ballsNotInSinks = foldr notInSink gameState.balls gameState.sinks
+      newBalls = map (moveBall <<< afterCollisionWithBlocks) ballsNotInSinks
+   in gameState { balls = newBalls }
+  where
+    afterCollisionWithBlocks :: Ball -> Ball
+    afterCollisionWithBlocks ball = fromMaybe ball
+                                    <<< head
+                                    <<< catMaybes
+                                    <<< fromFoldable
+                                      $ map (collide ball) gameState.blocks
+
+    -- filter out the balls that felt into the sink
+    notInSink :: Sink -> List Ball -> List Ball
+    notInSink sink = filter (not $ fallInSink sink)
+
+drawAll :: C.Context2D -> GameState -> Effect Unit
+drawAll ctx gameState = do
   C.clearRect ctx { x: 0.0, y: 0.0, width: canvasSide, height: canvasSide }
-  drawBall ctx ball
+  foreachE (toUnfoldable gameState.balls) (drawBall ctx)
 
 drawBackground :: Effect Unit
 drawBackground = do
@@ -114,6 +137,6 @@ main = do
       ctx <- C.getContext2D canvas
       let blocks = generateBlocks
       frames <- animationFrame
-      runSignal $ (ballSignal blocks frames) ~> drawAll ctx
+      runSignal $ (gameSignal frames) ~> drawAll ctx
       pure unit
     Nothing -> pure unit
