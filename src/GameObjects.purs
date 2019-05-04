@@ -79,11 +79,11 @@ newtype InkDot  = InkDot Circle
 type InkLine = Array InkDot
 
 mkBlock :: {row :: Int, col :: Int} -> Color -> Block
-mkBlock cor color =
+mkBlock coor color =
   { square:
       { topLeft:
-          { x: (blockSide + betweenCells) * toNumber cor.col
-          , y: (blockSide + betweenCells) * toNumber cor.row
+          { x: (blockSide + betweenCells) * toNumber coor.col
+          , y: (blockSide + betweenCells) * toNumber coor.row
           }
       , side: blockSide
       }
@@ -100,18 +100,25 @@ mkBall xy vel color =
   , color: color
   }
 
-mkSink :: {x :: Number, y :: Number} -> Color -> Sink
-mkSink xy color =
-  { square:
-      { topLeft: {x: xy.x, y: xy.y}
-      , side: sinkSide
+mkSink :: {row :: Int, col :: Int} -> Color -> Sink
+mkSink coor color =
+  let topLeft =
+        { x: (blockSide + betweenCells) * toNumber coor.col
+        , y: (blockSide + betweenCells) * toNumber coor.row
+        }
+   in { square:
+          { topLeft: topLeft
+          , side: sinkSide
+          }
+      , circle:
+          { center:
+              { x: topLeft.x + sinkSide / 2.0
+              , y: topLeft.y + sinkSide / 2.0
+              }
+          , radius: sinkHoleRadius
+          }
+      , color: color
       }
-  , circle:
-      { center: {x: xy.x + sinkSide / 2.0, y: xy.y + sinkSide / 2.0}
-      , radius: sinkHoleRadius
-      }
-  , color: color
-  }
 
 mkInkDot :: {x :: Number, y :: Number} -> InkDot
 mkInkDot xy = InkDot
