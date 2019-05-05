@@ -2,14 +2,22 @@ module Main where
 
 import Prelude
 import Effect (Effect, foreachE)
+import Effect.Console (log)
 import Graphics.Canvas as C
 import Data.Foldable (foldr)
+import Data.Int (round)
 import Data.List
   (List(..), fromFoldable, toUnfoldable, concat, (:), head, catMaybes, filter)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Signal (Signal, foldp, runSignal, (~>))
+import Signal (Signal, foldp, runSignal, dropRepeats, get, (~>))
 import Signal.Time (Time)
-import Signal.DOM (animationFrame)
+import Signal.DOM (MouseButton(..), CoordinatePair, animationFrame, mousePos, mouseButtonPressed)
+import Web.DOM.Document (toNonElementParentNode)
+import Web.DOM.NonElementParentNode (getElementById)
+import Web.HTML (window)
+import Web.HTML.HTMLDocument (toDocument)
+import Web.HTML.HTMLElement (fromElement, offsetLeft, offsetTop)
+import Web.HTML.Window (document)
 
 import GameObjects (GameState, Sink, Ball, Block, Color(..), mkBlock, mkSink)
 import Graphics (drawBlock, drawBall, drawSink)
@@ -148,6 +156,35 @@ generateSinks = toUnfoldable <<< concat $ genRows 0 board
     genCols rowNum colNum ( _  : cols) = genCols rowNum (colNum + 1) cols
     genCols _      _      Nil          = Nil
 
+mousePosWhenClicked :: Signal Boolean -> CoordinatePair -> Effect Unit
+mousePosWhenClicked mousePressedSignal coor = do
+  pressed <- get mousePressedSignal
+  if pressed
+    then do
+      offset <- canvasOffset
+      if validateCoordinates (coor - offset)
+        then log $ "x: " <> show (coor.x - offset.x) <> ", y: " <> show (coor.y - offset.y)
+        else pure unit
+    else pure unit
+  where
+    validateCoordinates :: CoordinatePair -> Boolean
+    validateCoordinates coordinatePair =
+      let validX = coordinatePair.x >= 0 && coordinatePair.x <= round canvasSide
+          validY = coordinatePair.y >= 0 && coordinatePair.y <= round canvasSide
+       in validX && validY
+
+canvasOffset :: Effect CoordinatePair
+canvasOffset = do
+  win <- window
+  doc <- document win
+  elemM <- getElementById "canvas-wrapper" (toNonElementParentNode $ toDocument doc)
+  case fromElement <$> elemM of
+    Just (Just elem) -> do
+      top <- offsetTop elem
+      left <- offsetLeft elem
+      pure { x: round left, y: round top }
+    _ -> pure { x: 0, y: 0 }
+
 main :: Effect Unit
 main = do
   drawBackground
@@ -160,5 +197,8 @@ main = do
       let blocks = generateBlocks
       frames <- animationFrame
       runSignal $ (gameSignal frames) ~> drawAll ctx
+      mp <- mousePos
+      pressed <- mouseButtonPressed MouseLeftButton
+      runSignal $ dropRepeats mp ~> mousePosWhenClicked pressed
       pure unit
     Nothing -> pure unit

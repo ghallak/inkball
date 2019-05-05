@@ -16,7 +16,9 @@
     "purescript-canvas": "^4.0.0",
     "purescript-signal": "^10.1.0",
     "purescript-lists": "^5.4.0",
-    "purescript-integers": "^4.0.0"
+    "purescript-integers": "^4.0.0",
+    "purescript-web-dom": "^2.0.0",
+    "purescript-web-html": "^2.0.1"
   },
   "devDependencies": {
     "purescript-psci-support": "^4.0.0"
