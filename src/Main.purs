@@ -139,7 +139,11 @@ generateBlocks = toUnfoldable <<< concat $ genRows 0 board
     genRows _ Nil          = Nil
 
     genCols :: Int -> Int -> List Char -> List Block
-    genCols rowNum colNum ('W' : cols) = mkBlock { row: rowNum, col: colNum } Gray : genCols rowNum (colNum + 1) cols
+    genCols rowNum colNum ('G' : cols) = mkBlock { row: rowNum, col: colNum } Green : genCols rowNum (colNum + 1) cols
+    genCols rowNum colNum ('R' : cols) = mkBlock { row: rowNum, col: colNum } Red : genCols rowNum (colNum + 1) cols
+    genCols rowNum colNum ('W' : cols) = mkBlock { row: rowNum, col: colNum } White : genCols rowNum (colNum + 1) cols
+    genCols rowNum colNum ('B' : cols) = mkBlock { row: rowNum, col: colNum } Blue : genCols rowNum (colNum + 1) cols
+    genCols rowNum colNum ('Y' : cols) = mkBlock { row: rowNum, col: colNum } Yellow : genCols rowNum (colNum + 1) cols
     genCols rowNum colNum ( _  : cols) = genCols rowNum (colNum + 1) cols
     genCols _      _      Nil          = Nil
 
@@ -153,6 +157,9 @@ generateSinks = toUnfoldable <<< concat $ genRows 0 board
     genCols :: Int -> Int -> List Char -> List Sink
     genCols rowNum colNum ('g' : cols) = mkSink { row: rowNum, col: colNum } Green : genCols rowNum (colNum + 1) cols
     genCols rowNum colNum ('r' : cols) = mkSink { row: rowNum, col: colNum } Red : genCols rowNum (colNum + 1) cols
+    genCols rowNum colNum ('w' : cols) = mkSink { row: rowNum, col: colNum } White : genCols rowNum (colNum + 1) cols
+    genCols rowNum colNum ('b' : cols) = mkSink { row: rowNum, col: colNum } Blue : genCols rowNum (colNum + 1) cols
+    genCols rowNum colNum ('y' : cols) = mkSink { row: rowNum, col: colNum } Yellow : genCols rowNum (colNum + 1) cols
     genCols rowNum colNum ( _  : cols) = genCols rowNum (colNum + 1) cols
     genCols _      _      Nil          = Nil
 

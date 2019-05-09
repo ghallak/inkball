@@ -33,7 +33,7 @@ data Color
   | DarkGray
 
 instance showColor :: Show Color where
-  show White = "white"
+  show White = "White"
   show Red = "Red"
   show Blue = "Blue"
   show Green = "Green"
