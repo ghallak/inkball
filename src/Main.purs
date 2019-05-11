@@ -219,7 +219,7 @@ main = do
       mp <- mousePos
       pressed <- mouseButtonPressed MouseLeftButton
       chan <- channel { x: 0, y: 0 }  -- TODO: this should be removed
-      runSignal $ dropRepeats mp ~> mousePosWhenClicked pressed chan
+      runSignal $ (sampleOn pressed (dropRepeats mp) <> (dropRepeats mp)) ~> mousePosWhenClicked pressed chan
 
       frames <- animationFrame
       runSignal $ (gameSignal frames (subscribe chan)) ~> drawAll ctx
