@@ -120,9 +120,9 @@ mkSink coor color =
       , color: color
       }
 
-mkInkDot :: {x :: Number, y :: Number} -> InkDot
+mkInkDot :: {x :: Int, y :: Int} -> InkDot
 mkInkDot xy = InkDot
-  { center: {x: xy.x, y: xy.y}
+  { center: {x: toNumber xy.x, y: toNumber xy.y}
   , radius: inkRadius
   }
 

@@ -2,14 +2,14 @@ module Main where
 
 import Prelude
 import Effect (Effect, foreachE)
-import Effect.Console (log)
 import Graphics.Canvas as C
 import Data.Foldable (foldr)
 import Data.Int (round)
 import Data.List
   (List(..), fromFoldable, toUnfoldable, concat, (:), head, catMaybes, filter)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Signal (Signal, foldp, runSignal, dropRepeats, get, (~>))
+import Signal (Signal, foldp, runSignal, dropRepeats, get, sampleOn, (~>))
+import Signal.Channel (Channel, channel, send, subscribe)
 import Signal.Time (Time)
 import Signal.DOM (MouseButton(..), CoordinatePair, animationFrame, mousePos, mouseButtonPressed)
 import Web.DOM.Document (toNonElementParentNode)
@@ -19,8 +19,8 @@ import Web.HTML.HTMLDocument (toDocument)
 import Web.HTML.HTMLElement (fromElement, offsetLeft, offsetTop)
 import Web.HTML.Window (document)
 
-import GameObjects (GameState, Sink, Ball, Block, Color(..), mkBlock, mkSink)
-import Graphics (drawBlock, drawBall, drawSink)
+import GameObjects (GameState, Sink, Ball, Block, Color(..), mkBlock, mkSink, mkInkDot)
+import Graphics (drawBlock, drawBall, drawSink, drawInkLine)
 import Physics (moveBall, collide, fallInSink, ballCollideWithBall)
 
 canvasSide :: Number
@@ -54,14 +54,15 @@ initialState =
   , inkLines: Nil
   }
 
-gameSignal :: Signal Time -> Signal GameState
-gameSignal frames = foldp (\_ -> nextState) initialState frames
+gameSignal :: Signal Time -> Signal CoordinatePair -> Signal GameState
+gameSignal frames coorSig = foldp nextState initialState (sampleOn frames coorSig)
 
-nextState :: GameState -> GameState
-nextState gameState =
+nextState :: CoordinatePair -> GameState -> GameState
+nextState coor gameState =
   let ballsNotInSinks = foldr notInSink gameState.balls gameState.sinks
       newBalls = map (moveBall <<< afterCollision) ballsNotInSinks
-   in gameState { balls = newBalls }
+      inkLine = [mkInkDot coor]
+   in gameState { balls = newBalls, inkLines = inkLine : gameState.inkLines }
   where
     afterCollision :: Ball -> Ball
     afterCollision = afterCollisionWithBlock <<< afterCollisionWithBall
@@ -89,6 +90,7 @@ nextState gameState =
 drawAll :: C.Context2D -> GameState -> Effect Unit
 drawAll ctx gameState = do
   C.clearRect ctx { x: 0.0, y: 0.0, width: canvasSide, height: canvasSide }
+  foreachE (toUnfoldable gameState.inkLines) (drawInkLine ctx)
   foreachE (toUnfoldable gameState.balls) (drawBall ctx)
 
 drawBackground :: Effect Unit
@@ -163,14 +165,15 @@ generateSinks = toUnfoldable <<< concat $ genRows 0 board
     genCols rowNum colNum ( _  : cols) = genCols rowNum (colNum + 1) cols
     genCols _      _      Nil          = Nil
 
-mousePosWhenClicked :: Signal Boolean -> CoordinatePair -> Effect Unit
-mousePosWhenClicked mousePressedSignal coor = do
+mousePosWhenClicked :: Signal Boolean -> Channel CoordinatePair -> CoordinatePair -> Effect Unit
+mousePosWhenClicked mousePressedSignal chan coor = do
   pressed <- get mousePressedSignal
   if pressed
     then do
       offset <- canvasOffset
-      if validateCoordinates (coor - offset)
-        then log $ "x: " <> show (coor.x - offset.x) <> ", y: " <> show (coor.y - offset.y)
+      let coorInCanvas = coor - offset
+      if validateCoordinates coorInCanvas
+        then send chan coorInCanvas
         else pure unit
     else pure unit
   where
@@ -201,11 +204,13 @@ main = do
       C.setCanvasWidth canvas canvasSide
       C.setCanvasHeight canvas canvasSide
       ctx <- C.getContext2D canvas
-      let blocks = generateBlocks
-      frames <- animationFrame
-      runSignal $ (gameSignal frames) ~> drawAll ctx
+
       mp <- mousePos
       pressed <- mouseButtonPressed MouseLeftButton
-      runSignal $ dropRepeats mp ~> mousePosWhenClicked pressed
+      chan <- channel { x: 0, y: 0 }  -- TODO: this should be removed
+      runSignal $ dropRepeats mp ~> mousePosWhenClicked pressed chan
+
+      frames <- animationFrame
+      runSignal $ (gameSignal frames (subscribe chan)) ~> drawAll ctx
       pure unit
     Nothing -> pure unit
