@@ -2,15 +2,22 @@ module Graphics
   ( drawBlock
   , drawBall
   , drawSink
+  , drawInkLine
   ) where
 
 import Prelude
-import Effect (Effect)
+import Effect (Effect, foreachE)
 import Graphics.Canvas as C
 import Math (pi)
 
-import GameObjects (Ball, Block, Color(..), Sink)
+import GameObjects (Color(..), InkDot(..), Ball, Block, InkLine, Sink)
 import Geometry (Square, Circle)
+
+drawInkLine :: C.Context2D -> InkLine -> Effect Unit
+drawInkLine ctx inkLine = foreachE inkLine (drawInkDot ctx)
+
+drawInkDot :: C.Context2D -> InkDot -> Effect Unit
+drawInkDot ctx (InkDot inkDot) = drawCircle ctx inkDot Black
 
 drawBlock :: C.Context2D -> Block -> Effect Unit
 drawBlock ctx block = drawSquare ctx block.square block.color
