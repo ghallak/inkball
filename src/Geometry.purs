@@ -10,6 +10,7 @@ module Geometry
   , circleIntersectSeg
   , circlesIntersect
   , multiplyByScalar
+  , circlesTouchingPoint
   ) where
 
 import Data.BooleanAlgebra ((||))
@@ -128,3 +129,10 @@ projectPointOnSeg c seg =
    in if pointOnSeg p seg
         then Just p
         else Nothing
+
+circlesTouchingPoint :: Circle -> Circle -> Point
+circlesTouchingPoint circle circle' =
+  let centersDiff = circle'.center - circle.center
+      radiusesSum = circle'.radius + circle.radius
+      point = { x: circle.radius / radiusesSum, y : circle.radius / radiusesSum }
+   in circle.center + (centersDiff * point)

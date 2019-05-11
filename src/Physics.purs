@@ -3,14 +3,19 @@ module Physics
   , collide
   , fallInSink
   , ballCollideWithBall
+  , ballCollideWithInkLine
   ) where
 
 import Prelude
+import Data.List (catMaybes, fromFoldable, head)
 import Data.Maybe(Maybe(..))
 import Data.Ord(abs)
 
-import GameObjects (BlockSide(..), Ball, Block, Sink, blockSide)
-import Geometry (pointToSegEnds, circleIntersectSeg, circlesIntersect)
+import GameObjects
+  (BlockSide(..), InkDot (..), InkLine, Ball, Block, Sink, blockSide)
+import Geometry
+  (pointToSegEnds, circleIntersectSeg, circlesIntersect, circlesTouchingPoint,
+  normalize, multiplyByScalar, dot)
 
 moveBall :: Ball -> Ball
 moveBall ball =
@@ -79,4 +84,19 @@ ballCollideWithBall ball ball' =
   let ballsCollide = circlesIntersect ball.circle ball'.circle
    in if ball.circle /= ball'.circle && ballsCollide
         then Just $ ball { velocity = ball'.velocity }
+        else Nothing
+
+-- https://gamedev.stackexchange.com/questions/112299/balls-velocity-vector-reflect-against-a-point
+-- https://www.gamasutra.com/view/feature/131424/pool_hall_lessons_fast_accurate_.php?page=3
+ballCollideWithInkLine :: Ball -> InkLine -> Maybe Ball
+ballCollideWithInkLine ball inkLine =
+  head <<< catMaybes <<< fromFoldable $ map (ballCollideWithInkDot ball) inkLine
+
+ballCollideWithInkDot :: Ball -> InkDot -> Maybe Ball
+ballCollideWithInkDot ball (InkDot inkDot) =
+  let touchPoint = circlesTouchingPoint ball.circle inkDot
+      n = normalize $ touchPoint - inkDot.center
+      v = ball.velocity - multiplyByScalar n (2.0 * dot ball.velocity n)
+   in if circlesIntersect ball.circle inkDot
+        then Just ball { velocity = v }
         else Nothing

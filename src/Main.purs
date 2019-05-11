@@ -21,7 +21,7 @@ import Web.HTML.Window (document)
 
 import GameObjects (GameState, Sink, Ball, Block, Color(..), mkBlock, mkSink, mkInkDot)
 import Graphics (drawBlock, drawBall, drawSink, drawInkLine)
-import Physics (moveBall, collide, fallInSink, ballCollideWithBall)
+import Physics (moveBall, collide, fallInSink, ballCollideWithBall, ballCollideWithInkLine)
 
 canvasSide :: Number
 canvasSide = 592.0
@@ -65,7 +65,10 @@ nextState coor gameState =
    in gameState { balls = newBalls, inkLines = inkLine : gameState.inkLines }
   where
     afterCollision :: Ball -> Ball
-    afterCollision = afterCollisionWithBlock <<< afterCollisionWithBall
+    afterCollision =
+      afterCollisionWithBlock
+      <<< afterCollisionWithBall
+      <<< afterCollisionWithInkLine
 
     afterCollisionWithBall :: Ball -> Ball
     afterCollisionWithBall ball =
@@ -82,6 +85,14 @@ nextState coor gameState =
       <<< catMaybes
       <<< fromFoldable
         $ map (collide ball) gameState.blocks
+
+    afterCollisionWithInkLine :: Ball -> Ball
+    afterCollisionWithInkLine ball =
+      fromMaybe ball
+      <<< head
+      <<< catMaybes
+      <<< fromFoldable
+        $ map (ballCollideWithInkLine ball) gameState.inkLines
 
     -- filter out the balls that felt into the sink
     notInSink :: Sink -> List Ball -> List Ball
