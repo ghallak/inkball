@@ -19,6 +19,7 @@ module GameObjects
 import Prelude
 import Data.Int (toNumber)
 import Data.List (List)
+import Data.List.NonEmpty (NonEmptyList)
 
 import Geometry (Circle, Square, Vec)
 
@@ -52,7 +53,7 @@ type GameState =
   { balls    :: List Ball
   , blocks   :: List Block
   , sinks    :: List Sink
-  , inkLines :: List InkLine
+  , inkLines :: NonEmptyList InkLine
   }
 
 type Velocity = Vec
