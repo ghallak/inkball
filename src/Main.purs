@@ -3,13 +3,15 @@ module Main where
 import Prelude
 import Effect (Effect, foreachE)
 import Graphics.Canvas as C
+import Data.Char.Unicode (isLower, isUpper)
 import Data.Foldable (foldr, any, null)
 import Data.Int (round)
 import Data.List
-  (List(..), fromFoldable, toUnfoldable, concat, (:), head, catMaybes, filter)
+  (List(..), fromFoldable, toUnfoldable, concat, (:), head, catMaybes, filter, length, zip, (..))
 import Data.List.NonEmpty as NE
 import Data.NonEmpty (singleton, (:|))
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Tuple (Tuple(..))
 import Signal (Signal, foldp, runSignal, dropRepeats, get, sampleOn, (~>))
 import Signal.Channel (Channel, channel, send, subscribe)
 import Signal.Time (Time)
@@ -173,37 +175,48 @@ board = fromFoldable <<< map fromFoldable $
   , [ 'W','W','W','W','W','W','W','W','W','W','W','W','W','W','W','W','W' ]
   ]
 
-generateBlocks :: Array Block
-generateBlocks = toUnfoldable <<< concat $ genRows 0 board
+enumBoard :: List (Tuple Char { row :: Int, col :: Int })
+enumBoard =
+  let rows = enumerate board
+      cols = enumerate (fromMaybe Nil (head board))
+      flatBoard = concat board
+      enumPairs = (\r c -> { row: r, col: c }) <$> rows <*> cols
+   in zip flatBoard enumPairs
   where
-    genRows :: Int -> List (List Char) -> List (List Block)
-    genRows r (row : rows) = genCols r 0 row : genRows (r + 1) rows
-    genRows _ Nil          = Nil
+    enumerate :: forall a. List a -> List Int
+    enumerate xs = 0..(length xs - 1)
 
-    genCols :: Int -> Int -> List Char -> List Block
-    genCols rowNum colNum ('G' : cols) = mkBlock { row: rowNum, col: colNum } Green : genCols rowNum (colNum + 1) cols
-    genCols rowNum colNum ('R' : cols) = mkBlock { row: rowNum, col: colNum } Red : genCols rowNum (colNum + 1) cols
-    genCols rowNum colNum ('W' : cols) = mkBlock { row: rowNum, col: colNum } White : genCols rowNum (colNum + 1) cols
-    genCols rowNum colNum ('B' : cols) = mkBlock { row: rowNum, col: colNum } Blue : genCols rowNum (colNum + 1) cols
-    genCols rowNum colNum ('Y' : cols) = mkBlock { row: rowNum, col: colNum } Yellow : genCols rowNum (colNum + 1) cols
-    genCols rowNum colNum ( _  : cols) = genCols rowNum (colNum + 1) cols
-    genCols _      _      Nil          = Nil
+generateBlocks :: Array Block
+generateBlocks =
+  let blocksCells = filter (\(Tuple c _) -> isUpper c) enumBoard
+   in toUnfoldable $ map toBlock blocksCells
+  where
+    toBlock :: Tuple Char { row :: Int, col :: Int } -> Block
+    toBlock (Tuple c coor) = mkBlock coor (charToColor c)
+
+    charToColor :: Char -> Color
+    charToColor 'G' = Green
+    charToColor 'R' = Red
+    charToColor 'W' = White
+    charToColor 'B' = Blue
+    charToColor 'Y' = Yellow
+    charToColor  _  = Gray
 
 generateSinks :: Array Sink
-generateSinks = toUnfoldable <<< concat $ genRows 0 board
+generateSinks =
+  let sinksCells = (filter (\(Tuple c _) -> isLower c) enumBoard)
+   in toUnfoldable $ map toSink sinksCells
   where
-    genRows :: Int -> List (List Char) -> List (List Sink)
-    genRows r (row : rows) = genCols r 0 row : genRows (r + 1) rows
-    genRows _ Nil          = Nil
+    toSink :: Tuple Char { row :: Int, col :: Int } -> Sink
+    toSink (Tuple c coor) = mkSink coor (charToColor c)
 
-    genCols :: Int -> Int -> List Char -> List Sink
-    genCols rowNum colNum ('g' : cols) = mkSink { row: rowNum, col: colNum } Green : genCols rowNum (colNum + 1) cols
-    genCols rowNum colNum ('r' : cols) = mkSink { row: rowNum, col: colNum } Red : genCols rowNum (colNum + 1) cols
-    genCols rowNum colNum ('w' : cols) = mkSink { row: rowNum, col: colNum } White : genCols rowNum (colNum + 1) cols
-    genCols rowNum colNum ('b' : cols) = mkSink { row: rowNum, col: colNum } Blue : genCols rowNum (colNum + 1) cols
-    genCols rowNum colNum ('y' : cols) = mkSink { row: rowNum, col: colNum } Yellow : genCols rowNum (colNum + 1) cols
-    genCols rowNum colNum ( _  : cols) = genCols rowNum (colNum + 1) cols
-    genCols _      _      Nil          = Nil
+    charToColor :: Char -> Color
+    charToColor 'g' = Green
+    charToColor 'r' = Red
+    charToColor 'w' = White
+    charToColor 'b' = Blue
+    charToColor 'y' = Yellow
+    charToColor  _  = Gray
 
 mousePosWhenClicked :: Signal Boolean -> Channel (Maybe CoordinatePair) -> CoordinatePair -> Effect Unit
 mousePosWhenClicked mousePressedSignal chan coor = do
