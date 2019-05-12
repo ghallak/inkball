@@ -6,15 +6,43 @@ module Graphics
   ) where
 
 import Prelude
+import Data.Array (length, head, last, init, slice, zipWith, tail, zip)
+import Data.Maybe (fromMaybe)
+import Data.Tuple
 import Effect (Effect, foreachE)
+import Effect.Console (log)
 import Graphics.Canvas as C
 import Math (pi)
 
-import GameObjects (Color(..), InkDot(..), Ball, Block, InkLine, Sink)
+import GameObjects (Color(..), InkDot(..), Ball, Block, InkLine, Sink, mkInkDot)
 import Geometry (Square, Circle)
 
 drawInkLine :: C.Context2D -> InkLine -> Effect Unit
-drawInkLine ctx inkLine = foreachE inkLine (drawInkDot ctx)
+drawInkLine ctx inkLine = do
+  let len = length inkLine
+
+  if len > 3
+    then do
+      let uselessPoint = mkInkDot { x: 500, y: 500 } -- TODO: delete later
+          firstPoint = inkDotToPoint <<< fromMaybe uselessPoint $ head inkLine
+          lastPoint = inkDotToPoint <<< fromMaybe uselessPoint $ last inkLine
+          beforeLastPoint = inkDotToPoint <<< fromMaybe uselessPoint <<< last <<< fromMaybe [] $ init inkLine
+          middle = map inkDotToPoint (slice 1 (length inkLine - 3) inkLine)
+          midPoints = zipWith (\p q -> (p + q) * { x: 0.5, y: 0.5 }) middle (fromMaybe [] (tail middle))
+
+      C.beginPath ctx
+      C.moveTo ctx firstPoint.x firstPoint.y
+      foreachE (zip middle midPoints) (C.quadraticCurveTo ctx <<< f)
+      C.quadraticCurveTo ctx { cpx: beforeLastPoint.x, cpy: beforeLastPoint.y, x: lastPoint.x, y: lastPoint.y }
+      C.stroke ctx
+    else pure unit
+
+  where
+    inkDotToPoint :: InkDot -> { x :: Number, y :: Number }
+    inkDotToPoint (InkDot inkDot) = inkDot.center
+
+    f :: Tuple { x :: Number, y :: Number } { x :: Number, y :: Number } -> C.QuadraticCurve
+    f (Tuple p q) = { cpx: p.x, cpy: p.y, x: q.x, y: q.y }
 
 drawInkDot :: C.Context2D -> InkDot -> Effect Unit
 drawInkDot ctx (InkDot inkDot) = drawCircle ctx inkDot Black

@@ -54,15 +54,18 @@ initialState =
   , inkLines: Nil
   }
 
-gameSignal :: Signal Time -> Signal CoordinatePair -> Signal GameState
+gameSignal :: Signal Time -> Signal (Maybe CoordinatePair) -> Signal GameState
 gameSignal frames coorSig = foldp nextState initialState (sampleOn frames coorSig)
 
-nextState :: CoordinatePair -> GameState -> GameState
+nextState :: Maybe CoordinatePair -> GameState -> GameState
 nextState coor gameState =
   let ballsNotInSinks = foldr notInSink gameState.balls gameState.sinks
       newBalls = map (moveBall <<< afterCollision) ballsNotInSinks
-      inkLine = [mkInkDot coor]
-   in gameState { balls = newBalls, inkLines = inkLine : gameState.inkLines }
+      newInkLines =
+        case coor of
+          Just coor' -> fromMaybe [] (head gameState.inkLines) <> [mkInkDot coor']
+          Nothing -> fromMaybe [] (head gameState.inkLines)
+   in gameState { balls = newBalls, inkLines = newInkLines : Nil }
   where
     afterCollision :: Ball -> Ball
     afterCollision =
@@ -176,7 +179,7 @@ generateSinks = toUnfoldable <<< concat $ genRows 0 board
     genCols rowNum colNum ( _  : cols) = genCols rowNum (colNum + 1) cols
     genCols _      _      Nil          = Nil
 
-mousePosWhenClicked :: Signal Boolean -> Channel CoordinatePair -> CoordinatePair -> Effect Unit
+mousePosWhenClicked :: Signal Boolean -> Channel (Maybe CoordinatePair) -> CoordinatePair -> Effect Unit
 mousePosWhenClicked mousePressedSignal chan coor = do
   pressed <- get mousePressedSignal
   if pressed
@@ -184,9 +187,9 @@ mousePosWhenClicked mousePressedSignal chan coor = do
       offset <- canvasOffset
       let coorInCanvas = coor - offset
       if validateCoordinates coorInCanvas
-        then send chan coorInCanvas
-        else pure unit
-    else pure unit
+        then send chan (Just coorInCanvas)
+        else send chan Nothing
+    else send chan Nothing
   where
     validateCoordinates :: CoordinatePair -> Boolean
     validateCoordinates coordinatePair =
@@ -218,7 +221,7 @@ main = do
 
       mp <- mousePos
       pressed <- mouseButtonPressed MouseLeftButton
-      chan <- channel { x: 0, y: 0 }  -- TODO: this should be removed
+      chan <- channel Nothing
       runSignal $ (sampleOn pressed (dropRepeats mp) <> (dropRepeats mp)) ~> mousePosWhenClicked pressed chan
 
       frames <- animationFrame
