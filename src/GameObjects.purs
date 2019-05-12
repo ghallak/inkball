@@ -1,6 +1,7 @@
 module GameObjects
   ( Color (..)
   , BlockSide (..)
+  , GameStatus (..)
   , Velocity
   , InkDot (..)
   , GameState
@@ -33,6 +34,8 @@ data Color
   | Black
   | DarkGray
 
+derive instance eqColor :: Eq Color
+
 instance showColor :: Show Color where
   show White = "White"
   show Red = "Red"
@@ -49,12 +52,20 @@ data BlockSide
   | RightSide
   | LeftSide
 
+data GameStatus
+  = Playing
+  | Won
+  | Lost
+
 type GameState =
   { balls    :: List Ball
   , blocks   :: List Block
   , sinks    :: List Sink
   , inkLines :: NonEmptyList InkLine
+  , status   :: GameStatus
   }
+
+derive instance eqGameStatus :: Eq GameStatus
 
 type Velocity = Vec
 

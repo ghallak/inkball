@@ -3,7 +3,7 @@ module Main where
 import Prelude
 import Effect (Effect, foreachE)
 import Graphics.Canvas as C
-import Data.Foldable (foldr)
+import Data.Foldable (foldr, any, null)
 import Data.Int (round)
 import Data.List
   (List(..), fromFoldable, toUnfoldable, concat, (:), head, catMaybes, filter)
@@ -21,7 +21,7 @@ import Web.HTML.HTMLDocument (toDocument)
 import Web.HTML.HTMLElement (fromElement, offsetLeft, offsetTop)
 import Web.HTML.Window (document)
 
-import GameObjects (GameState, Sink, Ball, Block, Color(..), mkBlock, mkSink, mkInkDot)
+import GameObjects (GameState, Sink, Ball, Block, GameStatus(..), Color(..), mkBlock, mkSink, mkInkDot)
 import Graphics (drawBlock, drawBall, drawSink, drawInkLine)
 import Physics (moveBall, collide, fallInSink, ballCollideWithBall, ballCollideWithInkLine)
 
@@ -54,6 +54,7 @@ initialState =
   , blocks: fromFoldable generateBlocks
   , sinks: fromFoldable generateSinks
   , inkLines: NE.NonEmptyList (singleton [])
+  , status: Playing
   }
 
 gameSignal :: Signal Time -> Signal (Maybe CoordinatePair) -> Signal GameState
@@ -61,17 +62,22 @@ gameSignal frames coorSig = foldp nextState initialState (sampleOn frames coorSi
 
 nextState :: Maybe CoordinatePair -> GameState -> GameState
 nextState mCoor gameState =
-  let ballsNotInSinks = foldr notInSink gameState.balls gameState.sinks
-      newBalls = map (moveBall <<< afterCollision) ballsNotInSinks
-      newInkLines =
-        case mCoor of
-          Just coor ->
-            let firstLine = NE.head gameState.inkLines
-                remainingLines = NE.tail gameState.inkLines
-                newFirstLine = firstLine <> [mkInkDot coor]
-             in NE.NonEmptyList $ newFirstLine :| remainingLines
-          Nothing -> NE.cons [] gameState.inkLines
-   in gameState { balls = newBalls, inkLines = newInkLines }
+  if gameState.status == Playing
+    then
+      let ballsNotInSinks = foldr notInSink gameState.balls gameState.sinks
+          newBalls = map (moveBall <<< afterCollision) ballsNotInSinks
+          lost = any (_ == true) $ fallInWrongSink <$> gameState.sinks <*> gameState.balls
+          newStatus = if lost then Lost else if null newBalls then Won else Playing
+          newInkLines =
+            case mCoor of
+              Just coor ->
+                let firstLine = NE.head gameState.inkLines
+                    remainingLines = NE.tail gameState.inkLines
+                    newFirstLine = firstLine <> [mkInkDot coor]
+                 in NE.NonEmptyList $ newFirstLine :| remainingLines
+              Nothing -> NE.cons [] gameState.inkLines
+       in gameState { balls = newBalls, inkLines = newInkLines, status = newStatus }
+    else gameState
   where
     afterCollision :: Ball -> Ball
     afterCollision =
@@ -107,11 +113,25 @@ nextState mCoor gameState =
     notInSink :: Sink -> List Ball -> List Ball
     notInSink sink = filter (not $ fallInSink sink)
 
+fallInWrongSink :: Sink -> Ball -> Boolean
+fallInWrongSink ball sink = fallInSink ball sink && ball.color /= sink.color
+
 drawAll :: C.Context2D -> GameState -> Effect Unit
 drawAll ctx gameState = do
   C.clearRect ctx { x: 0.0, y: 0.0, width: canvasSide, height: canvasSide }
-  foreachE (NE.toUnfoldable gameState.inkLines) (drawInkLine ctx)
-  foreachE (toUnfoldable gameState.balls) (drawBall ctx)
+  case gameState.status of
+    Playing -> do
+      foreachE (NE.toUnfoldable gameState.inkLines) (drawInkLine ctx)
+      foreachE (toUnfoldable gameState.balls) (drawBall ctx)
+    Won -> showText "You Won" Green
+    Lost -> showText "You Lost" Red
+  where
+    showText :: String -> Color -> Effect Unit
+    showText text color = do
+      C.setFont ctx "50px Comic Sans MS"
+      C.setFillStyle ctx (show color)
+      C.setTextAlign ctx C.AlignCenter
+      C.fillText ctx text (canvasSide / 2.0) (canvasSide / 2.0)
 
 drawBackground :: Effect Unit
 drawBackground = do
