@@ -12,7 +12,7 @@ import Data.Maybe(Maybe(..))
 import Data.Ord(abs)
 
 import GameObjects
-  (BlockSide(..), InkDot (..), InkLine, Ball, Block, Sink, blockSide)
+  (BlockSide(..), InkDot(..), Color(..), InkLine, Ball, Block, Sink, blockSide)
 import Geometry
   (pointToSegEnds, circleIntersectSeg, circlesIntersect, circlesTouchingPoint,
   normalize, multiplyByScalar, dot)
@@ -31,7 +31,7 @@ moveBall ball =
 collide :: Ball -> Block -> Maybe Ball
 collide ball block =
   case detectSide of
-    Just side -> Just $ changeDirection ball side
+    Just side -> Just $ changeDirection (ball { color = newBallColor }) side
     Nothing   -> Nothing
   where
     detectSide :: Maybe BlockSide
@@ -54,6 +54,7 @@ collide ball block =
       | rightIntersect  = Just RightSide
       | otherwise       = Nothing
 
+    newBallColor = if block.color == White then ball.color else block.color
     center = ball.circle.center
     bx = block.square.topLeft.x
     by = block.square.topLeft.y
