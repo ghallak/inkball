@@ -4,11 +4,11 @@ import Prelude
 import Effect (Effect, foreachE)
 import Graphics.Canvas as C
 import Data.Char.Unicode (isLower, isUpper)
-import Data.Foldable (foldr, any, null)
+import Data.Foldable (foldr, any, null, findMap)
 import Data.Int (round)
 import Data.List
-  (List(..), fromFoldable, toUnfoldable, concat, (:), head, catMaybes, filter,
-  length, zip, (..))
+  (List(..), fromFoldable, toUnfoldable, concat, (:), head, filter, length,
+  zip, (..))
 import Data.List.NonEmpty as NE
 import Data.NonEmpty (singleton, (:|))
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
@@ -96,27 +96,15 @@ nextState mCoor gameState =
 
     afterCollisionWithBall :: Ball -> Ball
     afterCollisionWithBall ball =
-      fromMaybe ball
-      <<< head
-      <<< catMaybes
-      <<< fromFoldable
-        $ map (ballCollideWithBall ball) gameState.balls
+      fromMaybe ball $ findMap (ballCollideWithBall ball) gameState.balls
 
     afterCollisionWithBlock :: Ball -> Ball
     afterCollisionWithBlock ball =
-      fromMaybe ball
-      <<< head
-      <<< catMaybes
-      <<< fromFoldable
-        $ map (collide ball) gameState.blocks
+      fromMaybe ball $ findMap (collide ball) gameState.blocks
 
     afterCollisionWithInkLine :: Ball -> Ball
     afterCollisionWithInkLine ball =
-      fromMaybe ball
-      <<< head
-      <<< catMaybes
-      <<< fromFoldable
-        $ map (ballCollideWithInkLine ball) gameState.inkLines
+      fromMaybe ball $ findMap (ballCollideWithInkLine ball) gameState.inkLines
 
     -- filter out the balls that felt into the sink
     notInSink :: Sink -> List Ball -> List Ball
