@@ -7,15 +7,18 @@ import Data.Char.Unicode (isLower, isUpper)
 import Data.Foldable (foldr, any, null)
 import Data.Int (round)
 import Data.List
-  (List(..), fromFoldable, toUnfoldable, concat, (:), head, catMaybes, filter, length, zip, (..))
+  (List(..), fromFoldable, toUnfoldable, concat, (:), head, catMaybes, filter,
+  length, zip, (..))
 import Data.List.NonEmpty as NE
 import Data.NonEmpty (singleton, (:|))
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.Tuple (Tuple(..))
 import Signal (Signal, foldp, runSignal, dropRepeats, get, sampleOn, (~>))
 import Signal.Channel (Channel, channel, send, subscribe)
 import Signal.Time (Time)
-import Signal.DOM (MouseButton(..), CoordinatePair, animationFrame, mousePos, mouseButtonPressed)
+import Signal.DOM
+  (MouseButton(..), CoordinatePair, animationFrame, mousePos,
+  mouseButtonPressed)
 import Web.DOM.Document (toNonElementParentNode)
 import Web.DOM.NonElementParentNode (getElementById)
 import Web.HTML (window)
@@ -23,9 +26,12 @@ import Web.HTML.HTMLDocument (toDocument)
 import Web.HTML.HTMLElement (fromElement, offsetLeft, offsetTop)
 import Web.HTML.Window (document)
 
-import GameObjects (GameState, Sink, Ball, Block, GameStatus(..), Color(..), mkBlock, mkSink, mkInkDot)
+import GameObjects
+  (GameState, Sink, Ball, Block, InkLine, GameStatus(..), Color(..), mkBlock,
+  mkSink, mkInkDot)
 import Graphics (drawBlock, drawBall, drawSink, drawInkLine)
-import Physics (moveBall, collide, fallInSink, ballCollideWithBall, ballCollideWithInkLine)
+import Physics
+  (moveBall, collide, fallInSink, ballCollideWithBall, ballCollideWithInkLine)
 
 canvasSide :: Number
 canvasSide = 592.0
@@ -78,7 +84,8 @@ nextState mCoor gameState =
                     newFirstLine = firstLine <> [mkInkDot coor]
                  in NE.NonEmptyList $ newFirstLine :| remainingLines
               Nothing -> NE.cons [] gameState.inkLines
-       in gameState { balls = newBalls, inkLines = newInkLines, status = newStatus }
+          unhitNewInkLines = foldr notHitInkLine newInkLines gameState.balls
+       in gameState { balls = newBalls, inkLines = unhitNewInkLines, status = newStatus }
     else gameState
   where
     afterCollision :: Ball -> Ball
@@ -113,7 +120,15 @@ nextState mCoor gameState =
 
     -- filter out the balls that felt into the sink
     notInSink :: Sink -> List Ball -> List Ball
-    notInSink sink = filter (not $ fallInSink sink)
+    notInSink sink = filter (not <<< fallInSink sink)
+
+    -- filter out the ink lines that were hit by a ball
+    notHitInkLine :: Ball -> NE.NonEmptyList InkLine -> NE.NonEmptyList InkLine
+    notHitInkLine ball inkLines =
+      let unhit = NE.filter (isNothing <<< ballCollideWithInkLine ball) inkLines
+       in case NE.fromList unhit of
+            Just nonEmptyList -> nonEmptyList
+            Nothing -> NE.NonEmptyList $ singleton []
 
 fallInWrongSink :: Sink -> Ball -> Boolean
 fallInWrongSink ball sink = fallInSink ball sink && ball.color /= sink.color
