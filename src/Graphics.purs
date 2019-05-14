@@ -8,21 +8,37 @@ module Graphics
 import Prelude
 import Data.Array (length, head, last, init, slice, zipWith, tail, zip)
 import Data.Maybe (fromMaybe)
-import Data.Tuple
+import Data.Tuple (Tuple(..))
 import Effect (Effect, foreachE)
-import Effect.Console (log)
 import Graphics.Canvas as C
 import Math (pi)
 
 import GameObjects (Color(..), InkDot(..), Ball, Block, InkLine, Sink, mkInkDot)
 import Geometry (Square, Circle)
 
+-- TODO: this function needs refactoring
 drawInkLine :: C.Context2D -> InkLine -> Effect Unit
 drawInkLine ctx inkLine = do
   let len = length inkLine
 
-  if len > 3
-    then do
+  case len of
+    1 -> do
+      let uselessPoint = mkInkDot { x: 500, y: 500 } -- TODO: delete later
+          firstPoint = inkDotToPoint <<< fromMaybe uselessPoint $ head inkLine
+
+      C.setFillStyle ctx "black"
+      -- width and height are set to 2.0 because 1.0 is barely visible
+      C.fillRect ctx { x: firstPoint.x, y: firstPoint.y, width: 2.0, height: 2.0 }
+    2 -> do
+      let uselessPoint = mkInkDot { x: 500, y: 500 } -- TODO: delete later
+          firstPoint = inkDotToPoint <<< fromMaybe uselessPoint $ head inkLine
+          lastPoint = inkDotToPoint <<< fromMaybe uselessPoint $ last inkLine
+
+      C.beginPath ctx
+      C.moveTo ctx firstPoint.x firstPoint.y
+      C.lineTo ctx firstPoint.x firstPoint.y
+      C.stroke ctx
+    _ -> do
       let uselessPoint = mkInkDot { x: 500, y: 500 } -- TODO: delete later
           firstPoint = inkDotToPoint <<< fromMaybe uselessPoint $ head inkLine
           lastPoint = inkDotToPoint <<< fromMaybe uselessPoint $ last inkLine
@@ -35,8 +51,6 @@ drawInkLine ctx inkLine = do
       foreachE (zip middle midPoints) (C.quadraticCurveTo ctx <<< f)
       C.quadraticCurveTo ctx { cpx: beforeLastPoint.x, cpy: beforeLastPoint.y, x: lastPoint.x, y: lastPoint.y }
       C.stroke ctx
-    else pure unit
-
   where
     inkDotToPoint :: InkDot -> { x :: Number, y :: Number }
     inkDotToPoint (InkDot inkDot) = inkDot.center
