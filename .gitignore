@@ -7,3 +7,7 @@
 /.psc*
 /.purs*
 /.psa*
+
+src/
+test/
+bower.json
