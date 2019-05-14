@@ -34,7 +34,7 @@ import Physics
   (moveBall, collide, fallInSink, ballCollideWithBall, ballCollideWithInkLine)
 
 canvasSide :: Number
-canvasSide = 592.0
+canvasSide = 598.0
 
 initialBall :: Ball
 initialBall =

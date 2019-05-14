@@ -88,5 +88,7 @@ drawSquare ctx square color = do
   let side = square.side
       topLeft = square.topLeft
       clr = show color
+  C.setShadowBlur ctx 2.0
+  C.setShadowColor ctx "black"
   C.setFillStyle ctx clr
   C.fillRect ctx { x: topLeft.x, y: topLeft.y, width: side, height: side }

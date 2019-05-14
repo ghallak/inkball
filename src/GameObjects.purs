@@ -100,8 +100,8 @@ mkBlock :: BoardCoordinate -> Color -> Block
 mkBlock coor color =
   { square:
       { topLeft:
-          { x: (blockSide + betweenCells) * toNumber coor.col
-          , y: (blockSide + betweenCells) * toNumber coor.row
+          { x: betweenCells + (blockSide + betweenCells) * toNumber coor.col
+          , y: betweenCells + (blockSide + betweenCells) * toNumber coor.row
           }
       , side: blockSide
       }
