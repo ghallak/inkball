@@ -27,8 +27,8 @@ import Web.HTML.HTMLElement (fromElement, offsetLeft, offsetTop)
 import Web.HTML.Window (document)
 
 import GameObjects
-  (GameState, Sink, Ball, Block, InkLine, GameStatus(..), Color(..), mkBlock,
-  mkSink, mkInkDot)
+  (GameState, Sink, Ball, Block, InkLine, BoardCoordinate, GameStatus(..),
+  Color(..), mkBlock, mkSink, mkInkDot)
 import Graphics (drawBlock, drawBall, drawSink, drawInkLine)
 import Physics
   (moveBall, collide, fallInSink, ballCollideWithBall, ballCollideWithInkLine)
@@ -178,7 +178,7 @@ board = fromFoldable <<< map fromFoldable $
   , [ 'W','G','G','G','G','G','W','W','W','W','W','W','W','W','W','W','W' ]
   ]
 
-enumBoard :: List (Tuple Char { row :: Int, col :: Int })
+enumBoard :: List (Tuple Char BoardCoordinate)
 enumBoard =
   let rows = enumerate board
       cols = enumerate (fromMaybe Nil (head board))
@@ -194,7 +194,7 @@ generateBlocks =
   let blocksCells = filter (\(Tuple c _) -> isUpper c) enumBoard
    in toUnfoldable $ map toBlock blocksCells
   where
-    toBlock :: Tuple Char { row :: Int, col :: Int } -> Block
+    toBlock :: Tuple Char BoardCoordinate -> Block
     toBlock (Tuple c coor) = mkBlock coor (charToColor c)
 
     charToColor :: Char -> Color
@@ -210,7 +210,7 @@ generateSinks =
   let sinksCells = (filter (\(Tuple c _) -> isLower c) enumBoard)
    in toUnfoldable $ map toSink sinksCells
   where
-    toSink :: Tuple Char { row :: Int, col :: Int } -> Sink
+    toSink :: Tuple Char BoardCoordinate -> Sink
     toSink (Tuple c coor) = mkSink coor (charToColor c)
 
     charToColor :: Char -> Color

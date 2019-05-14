@@ -9,6 +9,7 @@ module GameObjects
   , Ball
   , Sink
   , InkLine
+  , BoardCoordinate
   , mkBlock
   , mkBall
   , mkSink
@@ -90,7 +91,12 @@ newtype InkDot  = InkDot Circle
 
 type InkLine = Array InkDot
 
-mkBlock :: {row :: Int, col :: Int} -> Color -> Block
+type BoardCoordinate =
+  { row :: Int
+  , col :: Int
+  }
+
+mkBlock :: BoardCoordinate -> Color -> Block
 mkBlock coor color =
   { square:
       { topLeft:
@@ -112,7 +118,7 @@ mkBall xy vel color =
   , color: color
   }
 
-mkSink :: {row :: Int, col :: Int} -> Color -> Sink
+mkSink :: BoardCoordinate -> Color -> Sink
 mkSink coor color =
   let topLeft =
         { x: (blockSide + betweenCells) * toNumber coor.col
