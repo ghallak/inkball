@@ -3,16 +3,13 @@ module Main where
 import Prelude
 import Effect (Effect, foreachE)
 import Graphics.Canvas as C
-import Data.Char.Unicode (isLower, isUpper)
 import Data.Foldable (foldr, any, null, findMap)
 import Data.Int (round)
 import Data.List
-  (List(..), fromFoldable, toUnfoldable, concat, (:), head, filter, length,
-  zip, (..))
+  (List(..), fromFoldable, toUnfoldable, filter, (:))
 import Data.List.NonEmpty as NE
 import Data.NonEmpty (singleton, (:|))
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
-import Data.Tuple (Tuple(..))
 import Signal (Signal, foldp, runSignal, dropRepeats, get, sampleOn, (~>))
 import Signal.Channel (Channel, channel, send, subscribe)
 import Signal.Time (Time)
@@ -27,8 +24,8 @@ import Web.HTML.HTMLElement (fromElement, offsetLeft, offsetTop)
 import Web.HTML.Window (document)
 
 import GameObjects
-  (GameState, Sink, Ball, Block, InkLine, BoardCoordinate, GameStatus(..),
-  Color(..), mkBlock, mkSink, mkInkDot)
+  (GameState, Sink, Ball, InkLine, GameStatus(..),
+  Color(..), mkInkDot, generateBlocks, generateSinks)
 import Graphics (drawBlock, drawBall, drawSink, drawInkLine)
 import Physics
   (moveBall, collide, fallInSink, ballCollideWithBall, ballCollideWithInkLine)
@@ -156,70 +153,6 @@ drawBackground = do
       foreachE generateBlocks (drawBlock ctx)
       foreachE generateSinks (drawSink ctx)
     Nothing -> pure unit
-
-board :: List (List Char)
-board = fromFoldable <<< map fromFoldable $
-  [ [ 'W','W','W','W','W','W','R','R','R','R','R','W','W','W','W','W','W' ]
-  , [ 'W','.','W','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','r','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','W','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','W','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','g','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','G','G','G','G','G','W','W','W','W','W','W','W','W','W','W','W' ]
-  ]
-
-enumBoard :: List (Tuple Char BoardCoordinate)
-enumBoard =
-  let rows = enumerate board
-      cols = enumerate (fromMaybe Nil (head board))
-      flatBoard = concat board
-      enumPairs = (\r c -> { row: r, col: c }) <$> rows <*> cols
-   in zip flatBoard enumPairs
-  where
-    enumerate :: forall a. List a -> List Int
-    enumerate xs = 0..(length xs - 1)
-
-generateBlocks :: Array Block
-generateBlocks =
-  let blocksCells = filter (\(Tuple c _) -> isUpper c) enumBoard
-   in toUnfoldable $ map toBlock blocksCells
-  where
-    toBlock :: Tuple Char BoardCoordinate -> Block
-    toBlock (Tuple c coor) = mkBlock coor (charToColor c)
-
-    charToColor :: Char -> Color
-    charToColor 'G' = Green
-    charToColor 'R' = Red
-    charToColor 'W' = White
-    charToColor 'B' = Blue
-    charToColor 'Y' = Yellow
-    charToColor  _  = Gray
-
-generateSinks :: Array Sink
-generateSinks =
-  let sinksCells = (filter (\(Tuple c _) -> isLower c) enumBoard)
-   in toUnfoldable $ map toSink sinksCells
-  where
-    toSink :: Tuple Char BoardCoordinate -> Sink
-    toSink (Tuple c coor) = mkSink coor (charToColor c)
-
-    charToColor :: Char -> Color
-    charToColor 'g' = Green
-    charToColor 'r' = Red
-    charToColor 'w' = White
-    charToColor 'b' = Blue
-    charToColor 'y' = Yellow
-    charToColor  _  = Gray
 
 mousePosWhenClicked :: Signal Boolean -> Channel (Maybe CoordinatePair) -> CoordinatePair -> Effect Unit
 mousePosWhenClicked mousePressedSignal chan coor = do

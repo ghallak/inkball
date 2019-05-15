@@ -2,26 +2,28 @@ module GameObjects
   ( Color (..)
   , BlockSide (..)
   , GameStatus (..)
-  , Velocity
   , InkDot (..)
+  , Velocity
   , GameState
   , Block
   , Ball
   , Sink
   , InkLine
-  , BoardCoordinate
-  , mkBlock
-  , mkBall
-  , mkSink
   , mkInkDot
   , blockSide
-  , betweenCells
+  , generateBlocks
+  , generateSinks
   ) where
 
 import Prelude
+import Data.Char.Unicode (toLower, isLower, isUpper)
 import Data.Int (toNumber)
-import Data.List (List)
+import Data.List
+  (List(..), head, concat, zip, fromFoldable, toUnfoldable, filter, length,
+  (..))
 import Data.List.NonEmpty (NonEmptyList)
+import Data.Maybe (fromMaybe)
+import Data.Tuple (Tuple(..))
 
 import Geometry (Circle, Square, Vec)
 
@@ -144,6 +146,43 @@ mkInkDot xy = InkDot
   , radius: inkRadius
   }
 
+enumBoard :: List (Tuple Char BoardCoordinate)
+enumBoard =
+  let rows = enumerate board
+      cols = enumerate (fromMaybe Nil (head board))
+      flatBoard = concat board
+      enumPairs = (\r c -> { row: r, col: c }) <$> rows <*> cols
+   in zip flatBoard enumPairs
+  where
+    enumerate :: forall a. List a -> List Int
+    enumerate xs = 0..(length xs - 1)
+
+generateBlocks :: Array Block
+generateBlocks =
+  let blocksCells = filter (\(Tuple c _) -> isUpper c) enumBoard
+   in toUnfoldable $ map toBlock blocksCells
+  where
+    toBlock :: Tuple Char BoardCoordinate -> Block
+    toBlock (Tuple c coor) = mkBlock coor (charToColor c)
+
+generateSinks :: Array Sink
+generateSinks =
+  let sinksCells = (filter (\(Tuple c _) -> isLower c) enumBoard)
+   in toUnfoldable $ map toSink sinksCells
+  where
+    toSink :: Tuple Char BoardCoordinate -> Sink
+    toSink (Tuple c coor) = mkSink coor (charToColor c)
+
+charToColor :: Char -> Color
+charToColor c = smallCharToColor (toLower c)
+  where
+    smallCharToColor 'g' = Green
+    smallCharToColor 'r' = Red
+    smallCharToColor 'w' = White
+    smallCharToColor 'b' = Blue
+    smallCharToColor 'y' = Yellow
+    smallCharToColor  _  = Gray
+
 betweenCells :: Number
 betweenCells = 3.0
 
@@ -161,3 +200,24 @@ blockSide = 32.0
 
 sinkSide :: Number
 sinkSide = 64.0
+
+board :: List (List Char)
+board = fromFoldable <<< map fromFoldable $
+  [ [ 'W','W','W','W','W','W','R','R','R','R','R','W','W','W','W','W','W' ]
+  , [ 'W','.','W','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
+  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
+  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
+  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','r','.','.','.','W' ]
+  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
+  , [ 'W','.','.','.','W','.','.','.','.','.','.','.','.','.','.','.','W' ]
+  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
+  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
+  , [ 'W','.','.','.','.','.','.','.','.','W','.','.','.','.','.','.','W' ]
+  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
+  , [ 'W','.','.','.','.','.','.','.','.','.','g','.','.','.','.','.','W' ]
+  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
+  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
+  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
+  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
+  , [ 'W','G','G','G','G','G','W','W','W','W','W','W','W','W','W','W','W' ]
+  ]
