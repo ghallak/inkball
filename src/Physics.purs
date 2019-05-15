@@ -7,9 +7,9 @@ module Physics
   ) where
 
 import Prelude
-import Data.List (catMaybes, fromFoldable, head)
-import Data.Maybe(Maybe(..))
-import Data.Ord(abs)
+import Data.Foldable (findMap)
+import Data.Maybe (Maybe(..))
+import Data.Ord (abs)
 
 import GameObjects
   (BlockSide(..), InkDot(..), Color(..), InkLine, Ball, Block, Sink, blockSide)
@@ -90,8 +90,7 @@ ballCollideWithBall ball ball' =
 -- https://gamedev.stackexchange.com/questions/112299/balls-velocity-vector-reflect-against-a-point
 -- https://www.gamasutra.com/view/feature/131424/pool_hall_lessons_fast_accurate_.php?page=3
 ballCollideWithInkLine :: Ball -> InkLine -> Maybe Ball
-ballCollideWithInkLine ball inkLine =
-  head <<< catMaybes <<< fromFoldable $ map (ballCollideWithInkDot ball) inkLine
+ballCollideWithInkLine ball ink = findMap (ballCollideWithInkDot ball) ink
 
 ballCollideWithInkDot :: Ball -> InkDot -> Maybe Ball
 ballCollideWithInkDot ball (InkDot inkDot) =
