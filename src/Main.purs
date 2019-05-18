@@ -1,12 +1,11 @@
 module Main where
 
 import Prelude
-import Effect (Effect, foreachE)
-import Graphics.Canvas as C
+import Effect (Effect)
 import Data.Foldable (foldr, any, null, findMap)
 import Data.Int (round)
 import Data.List
-  (List(..), fromFoldable, toUnfoldable, filter, (:))
+  (List(..), fromFoldable, filter, (:))
 import Data.List.NonEmpty as NE
 import Data.NonEmpty (singleton, (:|))
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
@@ -26,12 +25,9 @@ import Web.HTML.Window (document)
 import GameObjects
   (GameState, Sink, Ball, InkLine, GameStatus(..),
   Color(..), mkInkDot, generateBlocks, generateSinks)
-import Graphics (drawBlock, drawBall, drawSink, drawInkLine)
+import Graphics (drawForeground, drawBackground, canvasSide)
 import Physics
   (moveBall, collide, fallInSink, ballCollideWithBall, ballCollideWithInkLine)
-
-canvasSide :: Number
-canvasSide = 598.0
 
 initialBall :: Ball
 initialBall =
@@ -118,42 +114,6 @@ nextState mCoor gameState =
 fallInWrongSink :: Sink -> Ball -> Boolean
 fallInWrongSink ball sink = fallInSink ball sink && ball.color /= sink.color
 
-drawAll :: C.Context2D -> GameState -> Effect Unit
-drawAll ctx gameState = do
-  C.clearRect ctx { x: 0.0, y: 0.0, width: canvasSide, height: canvasSide }
-  case gameState.status of
-    Playing -> do
-      foreachE (NE.toUnfoldable gameState.inkLines) (drawInkLine ctx)
-      foreachE (toUnfoldable gameState.balls) (drawBall ctx)
-    Won -> showText "You Won" Green
-    Lost -> showText "You Lost" Red
-  where
-    showText :: String -> Color -> Effect Unit
-    showText text color = do
-      C.setFont ctx "50px Comic Sans MS"
-      C.setFillStyle ctx (show color)
-      C.setTextAlign ctx C.AlignCenter
-      C.fillText ctx text (canvasSide / 2.0) (canvasSide / 2.0)
-
-drawBackground :: Effect Unit
-drawBackground = do
-  mcanvas <- C.getCanvasElementById "canvas-static"
-  case mcanvas of
-    Just canvas -> do
-      C.setCanvasWidth canvas canvasSide
-      C.setCanvasHeight canvas canvasSide
-      ctx <- C.getContext2D canvas
-      C.setFillStyle ctx (show DarkGray)
-      C.fillRect ctx
-        { x: 0.0
-        , y: 0.0
-        , width:  canvasSide
-        , height: canvasSide
-        }
-      foreachE generateBlocks (drawBlock ctx)
-      foreachE generateSinks (drawSink ctx)
-    Nothing -> pure unit
-
 mousePosWhenClicked :: Signal Boolean -> Channel (Maybe CoordinatePair) -> CoordinatePair -> Effect Unit
 mousePosWhenClicked mousePressedSignal chan coor = do
   pressed <- get mousePressedSignal
@@ -187,19 +147,12 @@ canvasOffset = do
 main :: Effect Unit
 main = do
   drawBackground
-  mcanvas <- C.getCanvasElementById "canvas-dynamic"
-  case mcanvas of
-    Just canvas -> do
-      C.setCanvasWidth canvas canvasSide
-      C.setCanvasHeight canvas canvasSide
-      ctx <- C.getContext2D canvas
 
-      mp <- mousePos
-      pressed <- mouseButtonPressed MouseLeftButton
-      chan <- channel Nothing
-      runSignal $ (sampleOn pressed (dropRepeats mp) <> (dropRepeats mp)) ~> mousePosWhenClicked pressed chan
+  mp <- mousePos
+  pressed <- mouseButtonPressed MouseLeftButton
+  chan <- channel Nothing
+  runSignal $ (sampleOn pressed (dropRepeats mp) <> (dropRepeats mp)) ~> mousePosWhenClicked pressed chan
 
-      frames <- animationFrame
-      runSignal $ (gameSignal frames (subscribe chan)) ~> drawAll ctx
-      pure unit
-    Nothing -> pure unit
+  frames <- animationFrame
+  runSignal $ (gameSignal frames (subscribe chan)) ~> drawForeground
+  pure unit

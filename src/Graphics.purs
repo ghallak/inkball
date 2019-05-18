@@ -1,20 +1,70 @@
 module Graphics
-  ( drawBlock
-  , drawBall
-  , drawSink
-  , drawInkLine
+  ( drawBackground
+  , drawForeground
+  , canvasSide
   ) where
 
 import Prelude
+
 import Data.Array (length, head, last, init, slice, zipWith, tail, zip)
-import Data.Maybe (fromMaybe)
+import Data.List (toUnfoldable)
+import Data.List.NonEmpty as NE
+import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.Tuple (Tuple(..))
 import Effect (Effect, foreachE)
 import Graphics.Canvas as C
 import Math (pi)
 
-import GameObjects (Color(..), InkDot(..), Ball, Block, InkLine, Sink, mkInkDot)
+import GameObjects
+  (Color(..), InkDot(..), GameState(..), GameStatus(..), Ball, Block, InkLine,
+  Sink, generateBlocks, generateSinks, mkInkDot)
 import Geometry (Square, Circle)
+
+canvasSide :: Number
+canvasSide = 598.0
+
+drawBackground :: Effect Unit
+drawBackground = do
+  mcanvas <- C.getCanvasElementById "canvas-static"
+  case mcanvas of
+    Just canvas -> do
+      C.setCanvasWidth canvas canvasSide
+      C.setCanvasHeight canvas canvasSide
+      ctx <- C.getContext2D canvas
+      C.setFillStyle ctx (show DarkGray)
+      C.fillRect ctx
+        { x: 0.0
+        , y: 0.0
+        , width:  canvasSide
+        , height: canvasSide
+        }
+      foreachE generateBlocks (drawBlock ctx)
+      foreachE generateSinks (drawSink ctx)
+    Nothing -> pure unit
+
+drawForeground :: GameState -> Effect Unit
+drawForeground gameState = do
+  mcanvas <- C.getCanvasElementById "canvas-dynamic"
+  case mcanvas of
+    Just canvas -> do
+      C.setCanvasWidth canvas canvasSide
+      C.setCanvasHeight canvas canvasSide
+      ctx <- C.getContext2D canvas
+      C.clearRect ctx { x: 0.0, y: 0.0, width: canvasSide, height: canvasSide }
+      case gameState.status of
+        Playing -> do
+          foreachE (NE.toUnfoldable gameState.inkLines) (drawInkLine ctx)
+          foreachE (toUnfoldable gameState.balls) (drawBall ctx)
+        Won -> showText ctx "You Won" Green
+        Lost -> showText ctx "You Lost" Red
+    Nothing -> pure unit
+  where
+    showText :: C.Context2D -> String -> Color -> Effect Unit
+    showText ctx text color = do
+      C.setFont ctx "50px Comic Sans MS"
+      C.setFillStyle ctx (show color)
+      C.setTextAlign ctx C.AlignCenter
+      C.fillText ctx text (canvasSide / 2.0) (canvasSide / 2.0)
 
 -- TODO: this function needs refactoring
 drawInkLine :: C.Context2D -> InkLine -> Effect Unit
