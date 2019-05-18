@@ -1,4 +1,6 @@
-module Main where
+module InkBall
+  ( main
+  ) where
 
 import Prelude
 import Effect (Effect)
@@ -22,11 +24,11 @@ import Web.HTML.HTMLDocument (toDocument)
 import Web.HTML.HTMLElement (fromElement, offsetLeft, offsetTop)
 import Web.HTML.Window (document)
 
-import GameObjects
+import InkBall.GameObjects
   (GameState, Sink, Ball, InkLine, GameStatus(..),
   Color(..), mkInkDot, generateBlocks, generateSinks)
-import Graphics (drawForeground, drawBackground, canvasSide)
-import Physics
+import InkBall.Graphics (drawForeground, drawBackground, canvasSide)
+import InkBall.Physics
   (moveBall, collide, fallInSink, ballCollideWithBall, ballCollideWithInkLine)
 
 initialBall :: Ball

@@ -1,4 +1,4 @@
-module Geometry
+module InkBall.Geometry
   ( Point
   , Vec
   , Segment

@@ -1,4 +1,4 @@
-module Physics
+module InkBall.Physics
   ( moveBall
   , collide
   , fallInSink
@@ -11,9 +11,9 @@ import Data.Foldable (findMap)
 import Data.Maybe (Maybe(..))
 import Data.Ord (abs)
 
-import GameObjects
+import InkBall.GameObjects
   (BlockSide(..), InkDot(..), Color(..), InkLine, Ball, Block, Sink, blockSide)
-import Geometry
+import InkBall.Geometry
   (pointToSegEnds, circleIntersectSeg, circlesIntersect, circlesTouchingPoint,
   normalize, multiplyByScalar, dot)
 

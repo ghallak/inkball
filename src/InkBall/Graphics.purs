@@ -1,4 +1,4 @@
-module Graphics
+module InkBall.Graphics
   ( drawBackground
   , drawForeground
   , canvasSide
@@ -9,16 +9,16 @@ import Prelude
 import Data.Array (length, head, last, init, slice, zipWith, tail, zip)
 import Data.List (toUnfoldable)
 import Data.List.NonEmpty as NE
-import Data.Maybe (Maybe(..), fromMaybe, isJust)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (Tuple(..))
 import Effect (Effect, foreachE)
 import Graphics.Canvas as C
 import Math (pi)
 
-import GameObjects
-  (Color(..), InkDot(..), GameState(..), GameStatus(..), Ball, Block, InkLine,
-  Sink, generateBlocks, generateSinks, mkInkDot)
-import Geometry (Square, Circle)
+import InkBall.GameObjects
+  (Color(..), InkDot(..), GameStatus(..), GameState, Ball, Block, InkLine, Sink,
+  generateBlocks, generateSinks, mkInkDot)
+import InkBall.Geometry (Square, Circle)
 
 canvasSide :: Number
 canvasSide = 598.0

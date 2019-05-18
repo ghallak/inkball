@@ -1,4 +1,4 @@
-module GameObjects
+module InkBall.GameObjects
   ( Color (..)
   , BlockSide (..)
   , GameStatus (..)
@@ -25,7 +25,7 @@ import Data.List.NonEmpty (NonEmptyList)
 import Data.Maybe (fromMaybe)
 import Data.Tuple (Tuple(..))
 
-import Geometry (Circle, Square, Vec)
+import InkBall.Geometry (Circle, Square, Vec)
 
 data Color
   = White
