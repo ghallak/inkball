@@ -79,7 +79,10 @@ nextState mCoor gameState =
                     remainingLines = NE.tail gameState.inkLines
                     newFirstLine = firstLine <> [mkInkDot coor]
                  in NE.NonEmptyList $ newFirstLine :| remainingLines
-              Nothing -> NE.cons [] gameState.inkLines
+              Nothing ->
+                case NE.head gameState.inkLines of
+                  [] -> gameState.inkLines
+                  _  -> NE.cons [] gameState.inkLines
           unhitNewInkLines = foldr notHitInkLine newInkLines gameState.balls
        in gameState { balls = newBalls, inkLines = unhitNewInkLines, status = newStatus }
     else gameState

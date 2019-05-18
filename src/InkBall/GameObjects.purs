@@ -18,8 +18,7 @@ import Prelude
 import Data.Char.Unicode (toLower, isLower, isUpper)
 import Data.Int (toNumber)
 import Data.List
-  (List(..), head, concat, zip, toUnfoldable, filter, length,
-  (..))
+  (List(..), head, concat, zip, toUnfoldable, filter, length, (..))
 import Data.List.NonEmpty (NonEmptyList)
 import Data.Maybe (fromMaybe)
 import Data.Tuple (Tuple(..))
@@ -62,6 +61,8 @@ data GameStatus
   | Won
   | Lost
 
+derive instance eqGameStatus :: Eq GameStatus
+
 type GameState =
   { balls    :: List Ball
   , blocks   :: List Block
@@ -69,8 +70,6 @@ type GameState =
   , inkLines :: NonEmptyList InkLine
   , status   :: GameStatus
   }
-
-derive instance eqGameStatus :: Eq GameStatus
 
 type Block =
   { square :: Square
