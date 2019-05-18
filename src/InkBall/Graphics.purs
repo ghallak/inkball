@@ -11,6 +11,7 @@ import Data.List.NonEmpty as NE
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (Tuple(..))
 import Effect (Effect, foreachE)
+import Effect.Console (log)
 import Graphics.Canvas as C
 import Math (pi)
 
@@ -50,6 +51,7 @@ drawForeground gameState = do
       C.clearRect ctx { x: 0.0, y: 0.0, width: canvasSide, height: canvasSide }
       case gameState.status of
         Playing -> do
+          log $ show (map length gameState.inkLines)
           foreachE (NE.toUnfoldable gameState.inkLines) (drawInkLine ctx)
           foreachE (toUnfoldable gameState.balls) (drawBall ctx)
         Won -> showText ctx "You Won" Green
@@ -81,10 +83,15 @@ drawInkLine ctx inkLine = do
           firstPoint = inkDotToPoint <<< fromMaybe uselessPoint $ head inkLine
           lastPoint = inkDotToPoint <<< fromMaybe uselessPoint $ last inkLine
 
-      C.beginPath ctx
-      C.moveTo ctx firstPoint.x firstPoint.y
-      C.lineTo ctx firstPoint.x firstPoint.y
-      C.stroke ctx
+      -- TODO: this is a temp fix, we should check if the distance is tiny before doing that
+      C.setFillStyle ctx "black"
+      -- width and height are set to 2.0 because 1.0 is barely visible
+      C.fillRect ctx { x: firstPoint.x, y: firstPoint.y, width: 2.0, height: 2.0 }
+
+      --C.beginPath ctx
+      --C.moveTo ctx firstPoint.x firstPoint.y
+      --C.lineTo ctx firstPoint.x firstPoint.y
+      --C.stroke ctx
     _ -> do
       let uselessPoint = mkInkDot { x: 500, y: 500 } -- TODO: delete later
           firstPoint = inkDotToPoint <<< fromMaybe uselessPoint $ head inkLine
@@ -93,11 +100,16 @@ drawInkLine ctx inkLine = do
           middle = map inkDotToPoint (slice 1 (length inkLine - 3) inkLine)
           midPoints = zipWith (\p q -> (p + q) * { x: 0.5, y: 0.5 }) middle (fromMaybe [] (tail middle))
 
-      C.beginPath ctx
-      C.moveTo ctx firstPoint.x firstPoint.y
-      foreachE (zip middle midPoints) (C.quadraticCurveTo ctx <<< f)
-      C.quadraticCurveTo ctx { cpx: beforeLastPoint.x, cpy: beforeLastPoint.y, x: lastPoint.x, y: lastPoint.y }
-      C.stroke ctx
+      -- TODO: this is a temp fix, we should check if the distance is tiny before doing that
+      C.setFillStyle ctx "black"
+      -- width and height are set to 2.0 because 1.0 is barely visible
+      C.fillRect ctx { x: firstPoint.x, y: firstPoint.y, width: 2.0, height: 2.0 }
+
+      --C.beginPath ctx
+      --C.moveTo ctx firstPoint.x firstPoint.y
+      --foreachE (zip middle midPoints) (C.quadraticCurveTo ctx <<< f)
+      --C.quadraticCurveTo ctx { cpx: beforeLastPoint.x, cpy: beforeLastPoint.y, x: lastPoint.x, y: lastPoint.y }
+      --C.stroke ctx
   where
     inkDotToPoint :: InkDot -> { x :: Number, y :: Number }
     inkDotToPoint (InkDot inkDot) = inkDot.center
