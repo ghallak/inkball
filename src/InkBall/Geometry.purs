@@ -13,14 +13,11 @@ module InkBall.Geometry
   , circlesTouchingPoint
   ) where
 
-import Data.BooleanAlgebra ((||))
-import Data.EuclideanRing ((/))
+import Prelude
+
 import Data.Foldable (all)
 import Data.Maybe (Maybe(..))
-import Data.Ord (abs, (<))
-import Data.Ring ((-))
-import Data.Semiring ((*), (+))
-import Math (pow, sqrt)
+import Math (abs, pow, sqrt)
 
 type Point =
   { x :: Number
