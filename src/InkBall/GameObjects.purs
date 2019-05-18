@@ -19,12 +19,13 @@ import Prelude
 import Data.Char.Unicode (toLower, isLower, isUpper)
 import Data.Int (toNumber)
 import Data.List
-  (List(..), head, concat, zip, fromFoldable, toUnfoldable, filter, length,
+  (List(..), head, concat, zip, toUnfoldable, filter, length,
   (..))
 import Data.List.NonEmpty (NonEmptyList)
 import Data.Maybe (fromMaybe)
 import Data.Tuple (Tuple(..))
 
+import InkBall.Boards (board)
 import InkBall.Constants
   (betweenCells, ballRadius, blockSide, inkRadius, sinkSide, sinkHoleRadius)
 import InkBall.Geometry (Circle, Square, Vec)
@@ -42,13 +43,13 @@ data Color
 derive instance eqColor :: Eq Color
 
 instance showColor :: Show Color where
-  show White = "White"
-  show Red = "Red"
-  show Blue = "Blue"
-  show Green = "Green"
-  show Yellow = "Yellow"
-  show Gray = "Gray"
-  show Black = "Black"
+  show White    = "White"
+  show Red      = "Red"
+  show Blue     = "Blue"
+  show Green    = "Green"
+  show Yellow   = "Yellow"
+  show Gray     = "Gray"
+  show Black    = "Black"
   show DarkGray = "DarkGray"
 
 data BlockSide
@@ -184,24 +185,3 @@ charToColor c = smallCharToColor (toLower c)
     smallCharToColor 'b' = Blue
     smallCharToColor 'y' = Yellow
     smallCharToColor  _  = Gray
-
-board :: List (List Char)
-board = fromFoldable <<< map fromFoldable $
-  [ [ 'W','W','W','W','W','W','R','R','R','R','R','W','W','W','W','W','W' ]
-  , [ 'W','.','W','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','r','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','W','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','W','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','g','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
-  , [ 'W','G','G','G','G','G','W','W','W','W','W','W','W','W','W','W','W' ]
-  ]
