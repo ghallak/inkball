@@ -10,12 +10,12 @@ module InkBall.GameObjects
   , Sink
   , InkLine
   , mkInkDot
-  , blockSide
   , generateBlocks
   , generateSinks
   ) where
 
 import Prelude
+
 import Data.Char.Unicode (toLower, isLower, isUpper)
 import Data.Int (toNumber)
 import Data.List
@@ -25,6 +25,8 @@ import Data.List.NonEmpty (NonEmptyList)
 import Data.Maybe (fromMaybe)
 import Data.Tuple (Tuple(..))
 
+import InkBall.Constants
+  (betweenCells, ballRadius, blockSide, inkRadius, sinkSide, sinkHoleRadius)
 import InkBall.Geometry (Circle, Square, Vec)
 
 data Color
@@ -182,24 +184,6 @@ charToColor c = smallCharToColor (toLower c)
     smallCharToColor 'b' = Blue
     smallCharToColor 'y' = Yellow
     smallCharToColor  _  = Gray
-
-betweenCells :: Number
-betweenCells = 3.0
-
-inkRadius :: Number
-inkRadius = 6.0
-
-ballRadius :: Number
-ballRadius = 16.0
-
-sinkHoleRadius :: Number
-sinkHoleRadius = 24.0
-
-blockSide :: Number
-blockSide = 32.0
-
-sinkSide :: Number
-sinkSide = 64.0
 
 board :: List (List Char)
 board = fromFoldable <<< map fromFoldable $

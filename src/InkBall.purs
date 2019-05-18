@@ -24,10 +24,11 @@ import Web.HTML.HTMLDocument (toDocument)
 import Web.HTML.HTMLElement (fromElement, offsetLeft, offsetTop)
 import Web.HTML.Window (document)
 
+import InkBall.Constants (canvasSide)
 import InkBall.GameObjects
-  (GameState, Sink, Ball, InkLine, GameStatus(..),
-  Color(..), mkInkDot, generateBlocks, generateSinks)
-import InkBall.Graphics (drawForeground, drawBackground, canvasSide)
+  (GameState, Sink, Ball, InkLine, GameStatus(..), Color(..), mkInkDot,
+  generateBlocks, generateSinks)
+import InkBall.Graphics (drawForeground, drawBackground)
 import InkBall.Physics
   (moveBall, collide, fallInSink, ballCollideWithBall, ballCollideWithInkLine)
 

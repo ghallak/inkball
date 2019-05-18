@@ -1,7 +1,6 @@
 module InkBall.Graphics
   ( drawBackground
   , drawForeground
-  , canvasSide
   ) where
 
 import Prelude
@@ -15,13 +14,11 @@ import Effect (Effect, foreachE)
 import Graphics.Canvas as C
 import Math (pi)
 
+import InkBall.Constants (canvasSide)
 import InkBall.GameObjects
   (Color(..), InkDot(..), GameStatus(..), GameState, Ball, Block, InkLine, Sink,
   generateBlocks, generateSinks, mkInkDot)
 import InkBall.Geometry (Square, Circle)
-
-canvasSide :: Number
-canvasSide = 598.0
 
 drawBackground :: Effect Unit
 drawBackground = do

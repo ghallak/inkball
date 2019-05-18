@@ -7,12 +7,14 @@ module InkBall.Physics
   ) where
 
 import Prelude
+
 import Data.Foldable (findMap)
 import Data.Maybe (Maybe(..))
 import Data.Ord (abs)
 
+import InkBall.Constants (blockSide)
 import InkBall.GameObjects
-  (BlockSide(..), InkDot(..), Color(..), InkLine, Ball, Block, Sink, blockSide)
+  (BlockSide(..), InkDot(..), Color(..), InkLine, Ball, Block, Sink)
 import InkBall.Geometry
   (pointToSegEnds, circleIntersectSeg, circlesIntersect, circlesTouchingPoint,
   normalize, multiplyByScalar, dot)
