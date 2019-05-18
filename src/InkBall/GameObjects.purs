@@ -3,7 +3,6 @@ module InkBall.GameObjects
   , BlockSide (..)
   , GameStatus (..)
   , InkDot (..)
-  , Velocity
   , GameState
   , Block
   , Ball
@@ -73,8 +72,6 @@ type GameState =
 
 derive instance eqGameStatus :: Eq GameStatus
 
-type Velocity = Vec
-
 type Block =
   { square :: Square
   , color  :: Color
@@ -82,7 +79,7 @@ type Block =
 
 type Ball =
   { circle   :: Circle
-  , velocity :: Velocity
+  , velocity :: Vec
   , color    :: Color
   }
 
@@ -113,7 +110,7 @@ mkBlock coor color =
   , color: color
   }
 
-mkBall :: {x :: Number, y :: Number} -> Velocity -> Color -> Ball
+mkBall :: {x :: Number, y :: Number} -> Vec -> Color -> Ball
 mkBall xy vel color =
   { circle:
       { center: {x: xy.x, y: xy.y}
