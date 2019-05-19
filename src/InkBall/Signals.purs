@@ -9,6 +9,8 @@ import Prelude
 import Data.Int (round)
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
+import Effect.Random (randomRange)
+import Math (pi, sin, cos)
 import Signal (Signal, foldp, get, dropRepeats, sampleOn, runSignal, (~>))
 import Signal.Channel (Channel, channel, send, subscribe)
 import Signal.DOM (CoordinatePair)
@@ -21,7 +23,7 @@ import Web.HTML.HTMLDocument (toDocument)
 import Web.HTML.HTMLElement (fromElement, offsetLeft, offsetTop)
 import Web.HTML.Window (document)
 
-import InkBall.Constants (canvasSide)
+import InkBall.Constants (canvasSide, ballRadius)
 import InkBall.GameObjects (Color(..), Ball)
 import InkBall.State (SignalSum(..), GameState, nextState, initialState)
 
@@ -36,15 +38,28 @@ launchBallSignal = do
 
 randomBallsGenerator :: Channel (Maybe Ball) -> Effect Unit
 randomBallsGenerator ballsChannel = do
-  let b = { circle:
-              { center: { x: 100.0, y: 100.0 }
-              , radius: 10.0
-              }
-          , velocity: { x: 2.0, y: 1.0 }
-          , color: Red
-          }
+  let sampleBall =
+        { circle:
+            { center: { x: 100.0, y: 100.0 }
+            , radius: ballRadius
+            }
+        , velocity: { x: 0.0, y: 2.0 }
+        , color: Red
+        }
 
-  send ballsChannel (Just b)
+  angle <- randomRange (-pi) pi
+
+  let v = sampleBall.velocity
+      -- rotate the velocity vector by a random angle
+      -- see: https://en.wikipedia.org/wiki/Rotation_matrix
+      ball = sampleBall
+        { velocity
+            { x = v.x * cos angle - v.y * sin angle
+            , y = v.x * sin angle + v.y * cos angle
+            }
+        }
+
+  send ballsChannel (Just ball)
 
 mousePosEveryFrame :: Effect (Signal SignalSum)
 mousePosEveryFrame = do
