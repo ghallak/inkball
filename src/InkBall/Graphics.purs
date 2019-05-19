@@ -16,9 +16,10 @@ import Math (pi)
 
 import InkBall.Constants (canvasSide)
 import InkBall.GameObjects
-  (Color(..), InkDot(..), GameStatus(..), GameState, Ball, Block, InkLine, Sink,
-  generateBlocks, generateSinks, mkInkDot)
+  (Color(..), InkDot(..), Ball, Block, InkLine, Sink, generateBlocks,
+  generateSinks, mkInkDot)
 import InkBall.Geometry (Square, Circle)
+import InkBall.State (GameStatus(..), GameState)
 
 drawBackground :: Effect Unit
 drawBackground = do
