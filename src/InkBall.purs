@@ -6,11 +6,10 @@ import Prelude
 import Effect (Effect)
 import Data.Foldable (foldr, any, null, findMap)
 import Data.Int (round)
-import Data.List
-  (List(..), fromFoldable, filter, (:))
+import Data.List (List(..), fromFoldable, filter, (:))
 import Data.List.NonEmpty as NE
 import Data.NonEmpty (singleton, (:|))
-import Data.Maybe (Maybe(..), fromMaybe, isNothing)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Signal (Signal, foldp, runSignal, dropRepeats, get, sampleOn, (~>))
 import Signal.Channel (Channel, channel, send, subscribe)
 import Signal.Time (Time)
@@ -114,7 +113,12 @@ nextState mCoor gameState =
     notHitInkLine ball inkLines =
       let unhit = NE.filter (isNothing <<< ballCollideWithInkLine ball) inkLines
        in case NE.fromList unhit of
-            Just nonEmptyList -> nonEmptyList
+            Just nonEmptyList ->
+              -- if the head of the list is hit, it should be replaced with [] to
+              -- avoid appending to the previous ink line
+              if isJust $ ballCollideWithInkLine ball (NE.head inkLines)
+                then NE.cons [] nonEmptyList
+                else nonEmptyList
             Nothing -> NE.NonEmptyList $ singleton []
 
 fallInWrongSink :: Sink -> Ball -> Boolean
