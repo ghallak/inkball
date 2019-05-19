@@ -12,7 +12,6 @@ import Data.NonEmpty (singleton, (:|))
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Signal (Signal, foldp, runSignal, dropRepeats, get, sampleOn, (~>))
 import Signal.Channel (Channel, channel, send, subscribe)
-import Signal.Time (Time)
 import Signal.DOM
   (MouseButton(..), CoordinatePair, animationFrame, mousePos,
   mouseButtonPressed)
@@ -60,8 +59,8 @@ initialState =
   , status: Playing
   }
 
-gameSignal :: Signal Time -> Signal (Maybe CoordinatePair) -> Signal GameState
-gameSignal frames coorSig = foldp nextState initialState (sampleOn frames coorSig)
+gameSignal :: Signal (Maybe CoordinatePair) -> Signal GameState
+gameSignal mousePosOnFrame = foldp nextState initialState mousePosOnFrame
 
 nextState :: Maybe CoordinatePair -> GameState -> GameState
 nextState mCoor gameState =
@@ -104,6 +103,9 @@ nextState mCoor gameState =
     afterCollisionWithInkLine ball =
       fromMaybe ball $ findMap (ballCollideWithInkLine ball) gameState.inkLines
 
+    fallInWrongSink :: Sink -> Ball -> Boolean
+    fallInWrongSink ball sink = fallInSink ball sink && ball.color /= sink.color
+
     -- filter out the balls that felt into the sink
     notInSink :: Sink -> List Ball -> List Ball
     notInSink sink = filter (not <<< fallInSink sink)
@@ -114,15 +116,12 @@ nextState mCoor gameState =
       let unhit = NE.filter (isNothing <<< ballCollideWithInkLine ball) inkLines
        in case NE.fromList unhit of
             Just nonEmptyList ->
-              -- if the head of the list is hit, it should be replaced with [] to
-              -- avoid appending to the previous ink line
+              -- if the head of the list is hit, it should be replaced with []
+              -- to avoid appending to the previous ink line
               if isJust $ ballCollideWithInkLine ball (NE.head inkLines)
                 then NE.cons [] nonEmptyList
                 else nonEmptyList
             Nothing -> NE.NonEmptyList $ singleton []
-
-fallInWrongSink :: Sink -> Ball -> Boolean
-fallInWrongSink ball sink = fallInSink ball sink && ball.color /= sink.color
 
 mousePosWhenClicked :: Signal Boolean -> Channel (Maybe CoordinatePair) -> CoordinatePair -> Effect Unit
 mousePosWhenClicked mousePressedSignal chan coor = do
@@ -154,15 +153,22 @@ canvasOffset = do
       pure { x: round left, y: round top }
     _ -> pure { x: 0, y: 0 }
 
+mousePosEveryFrame :: Effect (Signal (Maybe CoordinatePair))
+mousePosEveryFrame = do
+  pos <- mousePos
+  pressed <- mouseButtonPressed MouseLeftButton
+  posChannel <- channel Nothing
+  let posNoRepeats = dropRepeats pos
+      posOnPress = sampleOn pressed posNoRepeats
+      posOnPressOrMove = posOnPress <> posNoRepeats
+  runSignal $ posOnPressOrMove ~> mousePosWhenClicked pressed posChannel
+  frame <- animationFrame
+  pure $ sampleOn frame (subscribe posChannel)
+
 main :: Effect Unit
 main = do
   drawBackground
 
-  mp <- mousePos
-  pressed <- mouseButtonPressed MouseLeftButton
-  chan <- channel Nothing
-  runSignal $ (sampleOn pressed (dropRepeats mp) <> (dropRepeats mp)) ~> mousePosWhenClicked pressed chan
-
-  frames <- animationFrame
-  runSignal $ (gameSignal frames (subscribe chan)) ~> drawForeground
+  mousePosOnFrame <- mousePosEveryFrame
+  runSignal $ gameSignal mousePosOnFrame ~> drawForeground
   pure unit
