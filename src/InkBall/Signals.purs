@@ -1,6 +1,7 @@
 module InkBall.Signals
   ( gameSignal
   , mousePosEveryFrame
+  , launchBallSignal
   ) where
 
 import Prelude
@@ -12,6 +13,7 @@ import Signal (Signal, foldp, get, dropRepeats, sampleOn, runSignal, (~>))
 import Signal.Channel (Channel, channel, send, subscribe)
 import Signal.DOM (CoordinatePair)
 import Signal.DOM as DOM
+import Signal.Time (every)
 import Web.DOM.Document (toNonElementParentNode)
 import Web.DOM.NonElementParentNode (getElementById)
 import Web.HTML (window)
@@ -20,12 +22,31 @@ import Web.HTML.HTMLElement (fromElement, offsetLeft, offsetTop)
 import Web.HTML.Window (document)
 
 import InkBall.Constants (canvasSide)
-import InkBall.State (GameState, nextState, initialState)
+import InkBall.GameObjects (Color(..), Ball)
+import InkBall.State (SignalSum(..), GameState, nextState, initialState)
 
-gameSignal :: Signal (Maybe CoordinatePair) -> Signal GameState
-gameSignal mousePosOnFrame = foldp nextState initialState mousePosOnFrame
+gameSignal :: Signal SignalSum -> Signal GameState
+gameSignal signal = foldp nextState initialState signal
 
-mousePosEveryFrame :: Effect (Signal (Maybe CoordinatePair))
+launchBallSignal :: Effect (Signal SignalSum)
+launchBallSignal = do
+  ballsChannel <- channel Nothing
+  runSignal $ every 3000.0 ~> \_ -> randomBallsGenerator ballsChannel
+  pure $ LaunchBall <$> subscribe ballsChannel
+
+randomBallsGenerator :: Channel (Maybe Ball) -> Effect Unit
+randomBallsGenerator ballsChannel = do
+  let b = { circle:
+              { center: { x: 100.0, y: 100.0 }
+              , radius: 10.0
+              }
+          , velocity: { x: 2.0, y: 1.0 }
+          , color: Red
+          }
+
+  send ballsChannel (Just b)
+
+mousePosEveryFrame :: Effect (Signal SignalSum)
 mousePosEveryFrame = do
   pos <- DOM.mousePos
   pressed <- DOM.mouseButtonPressed DOM.MouseLeftButton
@@ -35,7 +56,7 @@ mousePosEveryFrame = do
       posOnPressOrMove = posOnPress <> posNoRepeats
   runSignal $ posOnPressOrMove ~> mousePosWhenClicked pressed posChannel
   frame <- DOM.animationFrame
-  pure $ sampleOn frame (subscribe posChannel)
+  pure $ MousePos <$> sampleOn frame (subscribe posChannel)
 
 mousePosWhenClicked :: Signal Boolean
                     -> Channel (Maybe CoordinatePair)

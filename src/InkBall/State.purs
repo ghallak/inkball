@@ -1,5 +1,6 @@
 module InkBall.State
   ( GameStatus(..)
+  , SignalSum(..)
   , GameState
   , nextState
   , initialState
@@ -15,8 +16,7 @@ import Data.NonEmpty (singleton, (:|))
 import Signal.DOM (CoordinatePair)
 
 import InkBall.GameObjects
-  (Block, Sink, Ball, InkLine, Color(..), mkInkDot,
-  generateBlocks, generateSinks)
+  (Block, Sink, Ball, InkLine, mkInkDot, generateBlocks, generateSinks)
 import InkBall.Physics
   (moveBall, collide, fallInSink, ballCollideWithBall, ballCollideWithInkLine)
 
@@ -28,6 +28,10 @@ type GameState =
   , status   :: GameStatus
   }
 
+data SignalSum
+  = MousePos (Maybe CoordinatePair)
+  | LaunchBall (Maybe Ball)
+
 data GameStatus
   = Playing
   | Won
@@ -35,57 +39,41 @@ data GameStatus
 
 derive instance eqGameStatus :: Eq GameStatus
 
-initialBall :: Ball
-initialBall =
-  { circle:
-      { center: { x: 100.0, y: 100.0 }
-      , radius: 10.0
-      }
-  , velocity: { x: 2.0, y: 1.0 }
-  , color: Red
-  }
-
-initialBall' :: Ball
-initialBall' =
-  { circle:
-      { center: { x: 200.0, y: 300.0 }
-      , radius: 10.0
-      }
-  , velocity: { x: -2.0, y: 1.5 }
-  , color: Green
-  }
-
 initialState :: GameState
 initialState =
-  { balls: initialBall : initialBall' : Nil
+  { balls: Nil
   , blocks: fromFoldable generateBlocks
   , sinks: fromFoldable generateSinks
   , inkLines: NE.NonEmptyList (singleton [])
   , status: Playing
   }
 
-nextState :: Maybe CoordinatePair -> GameState -> GameState
-nextState mCoor gameState =
-  if gameState.status == Playing
-    then
-      let ballsNotInSinks = foldr notInSink gameState.balls gameState.sinks
-          newBalls = map (moveBall <<< afterCollision) ballsNotInSinks
-          lost = any (_ == true) $ fallInWrongSink <$> gameState.sinks <*> gameState.balls
-          newStatus = if lost then Lost else if null newBalls then Won else Playing
-          newInkLines =
-            case mCoor of
-              Just coor ->
-                let firstLine = NE.head gameState.inkLines
-                    remainingLines = NE.tail gameState.inkLines
-                    newFirstLine = firstLine <> [mkInkDot coor]
-                 in NE.NonEmptyList $ newFirstLine :| remainingLines
-              Nothing ->
-                case NE.head gameState.inkLines of
-                  [] -> gameState.inkLines
-                  _  -> NE.cons [] gameState.inkLines
-          unhitNewInkLines = foldr notHitInkLine newInkLines gameState.balls
-       in gameState { balls = newBalls, inkLines = unhitNewInkLines, status = newStatus }
-    else gameState
+nextState :: SignalSum -> GameState -> GameState
+nextState signal gameState =
+  case signal of
+    LaunchBall (Just ball) -> gameState { balls = ball : gameState.balls}
+    MousePos mCoor ->
+      if gameState.status == Playing
+        then
+          let ballsNotInSinks = foldr notInSink gameState.balls gameState.sinks
+              newBalls = map (moveBall <<< afterCollision) ballsNotInSinks
+              lost = any (_ == true) $ fallInWrongSink <$> gameState.sinks <*> gameState.balls
+              newStatus = if lost then Lost else if null newBalls then Won else Playing
+              newInkLines =
+                case mCoor of
+                  Just coor ->
+                    let firstLine = NE.head gameState.inkLines
+                        remainingLines = NE.tail gameState.inkLines
+                        newFirstLine = firstLine <> [mkInkDot coor]
+                     in NE.NonEmptyList $ newFirstLine :| remainingLines
+                  Nothing ->
+                    case NE.head gameState.inkLines of
+                      [] -> gameState.inkLines
+                      _  -> NE.cons [] gameState.inkLines
+              unhitNewInkLines = foldr notHitInkLine newInkLines gameState.balls
+           in gameState { balls = newBalls, inkLines = unhitNewInkLines, status = newStatus }
+        else gameState
+    _ -> gameState
   where
     afterCollision :: Ball -> Ball
     afterCollision =

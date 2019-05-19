@@ -7,12 +7,13 @@ import Effect (Effect)
 import Signal (runSignal, (~>))
 
 import InkBall.Graphics (drawForeground, drawBackground)
-import InkBall.Signals (mousePosEveryFrame, gameSignal)
+import InkBall.Signals (mousePosEveryFrame, gameSignal, launchBallSignal)
 
 main :: Effect Unit
 main = do
   drawBackground
 
   mousePosOnFrame <- mousePosEveryFrame
-  runSignal $ gameSignal mousePosOnFrame ~> drawForeground
+  launchBall <- launchBallSignal
+  runSignal $ gameSignal (launchBall <> mousePosOnFrame) ~> drawForeground
   pure unit
