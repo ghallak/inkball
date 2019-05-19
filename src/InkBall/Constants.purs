@@ -18,7 +18,7 @@ inkRadius :: Number
 inkRadius = 6.0
 
 ballRadius :: Number
-ballRadius = 16.0
+ballRadius = 10.0
 
 sinkHoleRadius :: Number
 sinkHoleRadius = 24.0
