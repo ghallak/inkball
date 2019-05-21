@@ -4,6 +4,7 @@ module InkBall.Constants
   , inkRadius
   , ballRadius
   , sinkHoleRadius
+  , ballSourceRadius
   , blockSide
   , sinkSide
   ) where
@@ -22,6 +23,9 @@ ballRadius = 10.0
 
 sinkHoleRadius :: Number
 sinkHoleRadius = 24.0
+
+ballSourceRadius :: Number
+ballSourceRadius = 4.0
 
 blockSide :: Number
 blockSide = 32.0

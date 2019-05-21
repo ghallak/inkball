@@ -16,8 +16,8 @@ import Math (pi)
 
 import InkBall.Constants (canvasSide)
 import InkBall.GameObjects
-  (Color(..), InkDot(..), Ball, Block, InkLine, Sink, generateBlocks,
-  generateSinks, mkInkDot)
+  (Color(..), InkDot(..), Ball, Block, InkLine, Sink, BallSource, mkInkDot,
+   generateBlocks, generateSinks, generateBallSources)
 import InkBall.Geometry (Square, Circle)
 import InkBall.State (GameStatus(..), GameState)
 
@@ -38,6 +38,7 @@ drawBackground = do
         }
       foreachE generateBlocks (drawBlock ctx)
       foreachE generateSinks (drawSink ctx)
+      foreachE generateBallSources (drawBallSource ctx)
     Nothing -> pure unit
 
 drawForeground :: GameState -> Effect Unit
@@ -119,6 +120,11 @@ drawSink :: C.Context2D -> Sink -> Effect Unit
 drawSink ctx sink = do
   drawSquare ctx sink.square sink.color
   drawCircle ctx sink.circle Black
+
+drawBallSource :: C.Context2D -> BallSource -> Effect Unit
+drawBallSource ctx ballSource = do
+  drawSquare ctx ballSource.square Gray
+  drawCircle ctx ballSource.circle Black
 
 drawCircle :: C.Context2D -> Circle -> Color -> Effect Unit
 drawCircle ctx circle color = do

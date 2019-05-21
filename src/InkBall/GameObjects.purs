@@ -6,9 +6,11 @@ module InkBall.GameObjects
   , Ball
   , Sink
   , InkLine
+  , BallSource
   , mkInkDot
   , generateBlocks
   , generateSinks
+  , generateBallSources
   ) where
 
 import Prelude
@@ -22,7 +24,8 @@ import Data.Tuple (Tuple(..))
 
 import InkBall.Boards (board)
 import InkBall.Constants
-  (betweenCells, ballRadius, blockSide, inkRadius, sinkSide, sinkHoleRadius)
+  (betweenCells, ballRadius, blockSide, inkRadius, sinkSide, sinkHoleRadius,
+  ballSourceRadius)
 import InkBall.Geometry (Circle, Square, Vec)
 
 data Color
@@ -68,6 +71,11 @@ type Sink =
   { square :: Square
   , circle :: Circle
   , color  :: Color
+  }
+
+type BallSource =
+  { square :: Square
+  , circle :: Circle
   }
 
 newtype InkDot  = InkDot Circle
@@ -127,6 +135,25 @@ mkInkDot xy = InkDot
   , radius: inkRadius
   }
 
+mkBallSource :: BoardCoordinate -> BallSource
+mkBallSource coor =
+  let topLeft =
+        { x: betweenCells + (blockSide + betweenCells) * toNumber coor.col
+        , y: betweenCells + (blockSide + betweenCells) * toNumber coor.row
+        }
+   in { square:
+          { topLeft: topLeft
+          , side: blockSide
+          }
+      , circle:
+          { center:
+              { x: topLeft.x + blockSide / 2.0
+              , y: topLeft.y + blockSide / 2.0
+              }
+          , radius: ballSourceRadius
+          }
+      }
+
 enumBoard :: List (Tuple Char BoardCoordinate)
 enumBoard =
   let rows = enumerate board
@@ -148,11 +175,19 @@ generateBlocks =
 
 generateSinks :: Array Sink
 generateSinks =
-  let sinksCells = (filter (\(Tuple c _) -> isLower c) enumBoard)
+  let sinksCells = filter (\(Tuple c _) -> isLower c) enumBoard
    in toUnfoldable $ map toSink sinksCells
   where
     toSink :: Tuple Char BoardCoordinate -> Sink
     toSink (Tuple c coor) = mkSink coor (charToColor c)
+
+generateBallSources :: Array BallSource
+generateBallSources =
+  let ballSourcesCells = filter (\(Tuple c _) -> c == '@') enumBoard
+   in toUnfoldable $ map toBallSource ballSourcesCells
+  where
+    toBallSource :: Tuple Char BoardCoordinate -> BallSource
+    toBallSource (Tuple _ coor) = mkBallSource coor
 
 charToColor :: Char -> Color
 charToColor c = smallCharToColor (toLower c)

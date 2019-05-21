@@ -6,10 +6,11 @@ module InkBall.Signals
 
 import Prelude
 
+import Data.Array (length, (!!))
 import Data.Int (round)
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
-import Effect.Random (randomRange)
+import Effect.Random (randomRange, randomInt)
 import Math (pi, sin, cos)
 import Signal (Signal, foldp, get, dropRepeats, sampleOn, runSignal, (~>))
 import Signal.Channel (Channel, channel, send, subscribe)
@@ -24,7 +25,7 @@ import Web.HTML.HTMLElement (fromElement, offsetLeft, offsetTop)
 import Web.HTML.Window (document)
 
 import InkBall.Constants (canvasSide, ballRadius)
-import InkBall.GameObjects (Color(..), Ball)
+import InkBall.GameObjects (Color(..), Ball, generateBallSources)
 import InkBall.State (SignalSum(..), GameState, nextState, initialState)
 
 gameSignal :: Signal SignalSum -> Signal GameState
@@ -48,18 +49,25 @@ randomBallsGenerator ballsChannel = do
         }
 
   angle <- randomRange (-pi) pi
+  randomIndex <- randomInt 0 (length generateBallSources - 1)
 
-  let v = sampleBall.velocity
-      -- rotate the velocity vector by a random angle
-      -- see: https://en.wikipedia.org/wiki/Rotation_matrix
-      ball = sampleBall
-        { velocity
-            { x = v.x * cos angle - v.y * sin angle
-            , y = v.x * sin angle + v.y * cos angle
+  case generateBallSources !! randomIndex of
+    Just ballSource ->
+      let vel = sampleBall.velocity
+          ballCenter = ballSource.circle.center
+          ball = sampleBall
+            { velocity
+                -- rotate the velocity vector by a random angle
+                -- see: https://en.wikipedia.org/wiki/Rotation_matrix
+                { x = vel.x * cos angle - vel.y * sin angle
+                , y = vel.x * sin angle + vel.y * cos angle
+                }
+            , circle
+                { center = ballCenter
+                }
             }
-        }
-
-  send ballsChannel (Just ball)
+       in send ballsChannel (Just ball)
+    Nothing -> pure unit
 
 mousePosEveryFrame :: Effect (Signal SignalSum)
 mousePosEveryFrame = do
