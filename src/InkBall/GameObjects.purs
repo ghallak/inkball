@@ -112,9 +112,9 @@ mkBall xy vel color =
 mkSink :: BoardCoordinate -> Color -> Sink
 mkSink coor color =
   let topLeft =
-        { x: (blockSide + betweenCells) * toNumber coor.col
-        , y: (blockSide + betweenCells) * toNumber coor.row
-        }
+          { x: betweenCells + (blockSide + betweenCells) * toNumber coor.col
+          , y: betweenCells + (blockSide + betweenCells) * toNumber coor.row
+          }
    in { square:
           { topLeft: topLeft
           , side: sinkSide
