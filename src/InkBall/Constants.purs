@@ -16,7 +16,7 @@ betweenCells :: Number
 betweenCells = 3.0
 
 inkRadius :: Number
-inkRadius = 6.0
+inkRadius = 1.0
 
 ballRadius :: Number
 ballRadius = 10.0
