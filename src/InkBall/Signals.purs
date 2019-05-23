@@ -25,7 +25,7 @@ import Web.HTML.HTMLElement (fromElement, offsetLeft, offsetTop)
 import Web.HTML.Window (document)
 
 import InkBall.Constants (canvasSide, ballRadius)
-import InkBall.GameObjects (Color(..), Ball, generateBallSources)
+import InkBall.GameObjects (Color(..), Ball, generateBallSources, generateSinks)
 import InkBall.State (SignalSum(..), GameState, nextState, initialState)
 
 gameSignal :: Signal SignalSum -> Signal GameState
@@ -48,10 +48,15 @@ randomBallsGenerator ballsChannel = do
         , color: Red
         }
 
+  let sinksColors = map (\sink -> sink.color) generateSinks
+  randomColorIndex <- randomInt 0 (length sinksColors - 1)
+  let ballColor = case sinksColors !! randomColorIndex of
+                    Just color -> color
+                    Nothing -> White
   angle <- randomRange (-pi) pi
-  randomIndex <- randomInt 0 (length generateBallSources - 1)
+  randomBallSourceIndex <- randomInt 0 (length generateBallSources - 1)
 
-  case generateBallSources !! randomIndex of
+  case generateBallSources !! randomBallSourceIndex of
     Just ballSource ->
       let vel = sampleBall.velocity
           ballCenter = ballSource.circle.center
@@ -65,6 +70,7 @@ randomBallsGenerator ballsChannel = do
             , circle
                 { center = ballCenter
                 }
+            , color = ballColor
             }
        in send ballsChannel (Just ball)
     Nothing -> pure unit
