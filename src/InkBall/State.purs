@@ -18,7 +18,7 @@ import Signal.DOM (CoordinatePair)
 import InkBall.GameObjects
   (Block, Sink, Ball, InkLine, mkInkDot, generateBlocks, generateSinks)
 import InkBall.Physics
-  (moveBall, collide, fallInSink, ballCollideWithBall, ballCollideWithInkLine)
+  (moveBall, fallInSink, collideWithBlock, collideWithBall, collideWithInkLine)
 
 type GameState =
   { balls    :: List Ball
@@ -83,15 +83,15 @@ nextState signal gameState =
 
     afterCollisionWithBall :: Ball -> Ball
     afterCollisionWithBall ball =
-      fromMaybe ball $ findMap (ballCollideWithBall ball) gameState.balls
+      fromMaybe ball $ findMap (collideWithBall ball) gameState.balls
 
     afterCollisionWithBlock :: Ball -> Ball
     afterCollisionWithBlock ball =
-      fromMaybe ball $ findMap (collide ball) gameState.blocks
+      fromMaybe ball $ findMap (collideWithBlock ball) gameState.blocks
 
     afterCollisionWithInkLine :: Ball -> Ball
     afterCollisionWithInkLine ball =
-      fromMaybe ball $ findMap (ballCollideWithInkLine ball) gameState.inkLines
+      fromMaybe ball $ findMap (collideWithInkLine ball) gameState.inkLines
 
     fallInWrongSink :: Sink -> Ball -> Boolean
     fallInWrongSink ball sink = fallInSink ball sink && ball.color /= sink.color
@@ -103,12 +103,12 @@ nextState signal gameState =
     -- filter out the ink lines that were hit by a ball
     notHitInkLine :: Ball -> NE.NonEmptyList InkLine -> NE.NonEmptyList InkLine
     notHitInkLine ball inkLines =
-      let unhit = NE.filter (isNothing <<< ballCollideWithInkLine ball) inkLines
+      let unhit = NE.filter (isNothing <<< collideWithInkLine ball) inkLines
        in case NE.fromList unhit of
             Just nonEmptyList ->
               -- if the head of the list is hit, it should be replaced with []
               -- to avoid appending to the previous ink line
-              if isJust $ ballCollideWithInkLine ball (NE.head inkLines)
+              if isJust $ collideWithInkLine ball (NE.head inkLines)
                 then NE.cons [] nonEmptyList
                 else nonEmptyList
             Nothing -> NE.NonEmptyList $ singleton []

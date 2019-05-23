@@ -1,9 +1,9 @@
 module InkBall.Physics
   ( moveBall
-  , collide
   , fallInSink
-  , ballCollideWithBall
-  , ballCollideWithInkLine
+  , collideWithBlock
+  , collideWithBall
+  , collideWithInkLine
   ) where
 
 import Prelude
@@ -30,8 +30,8 @@ moveBall ball =
       }
     }
 
-collide :: Ball -> Block -> Maybe Ball
-collide ball block =
+collideWithBlock :: Ball -> Block -> Maybe Ball
+collideWithBlock ball block =
   case detectSide of
     Just side -> Just $ changeDirection (ball { color = newBallColor }) side
     Nothing   -> Nothing
@@ -82,8 +82,8 @@ changeDirection ball RightSide  = ball { velocity { x = abs ball.velocity.x } }
 fallInSink :: Sink -> Ball -> Boolean
 fallInSink sink ball = circlesIntersect sink.circle ball.circle
 
-ballCollideWithBall :: Ball -> Ball -> Maybe Ball
-ballCollideWithBall ball ball' =
+collideWithBall :: Ball -> Ball -> Maybe Ball
+collideWithBall ball ball' =
   let ballsCollide = circlesIntersect ball.circle ball'.circle
    in if ball.circle /= ball'.circle && ballsCollide
         then Just $ ball { velocity = ball'.velocity }
@@ -91,11 +91,11 @@ ballCollideWithBall ball ball' =
 
 -- https://gamedev.stackexchange.com/questions/112299/balls-velocity-vector-reflect-against-a-point
 -- https://www.gamasutra.com/view/feature/131424/pool_hall_lessons_fast_accurate_.php?page=3
-ballCollideWithInkLine :: Ball -> InkLine -> Maybe Ball
-ballCollideWithInkLine ball ink = findMap (ballCollideWithInkDot ball) ink
+collideWithInkLine :: Ball -> InkLine -> Maybe Ball
+collideWithInkLine ball ink = findMap (collideWithInkDot ball) ink
 
-ballCollideWithInkDot :: Ball -> InkDot -> Maybe Ball
-ballCollideWithInkDot ball (InkDot inkDot) =
+collideWithInkDot :: Ball -> InkDot -> Maybe Ball
+collideWithInkDot ball (InkDot inkDot) =
   let touchPoint = circlesTouchingPoint ball.circle inkDot
       n = normalize $ touchPoint - inkDot.center
       v = ball.velocity - multiplyByScalar n (2.0 * dot ball.velocity n)
