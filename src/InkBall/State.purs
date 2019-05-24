@@ -18,7 +18,8 @@ import Signal.DOM (CoordinatePair)
 import InkBall.GameObjects
   (Block, Sink, Ball, InkLine, mkInkDot, generateBlocks, generateSinks)
 import InkBall.Physics
-  (moveBall, fallInSink, collideWithBlock, collideWithBall, collideWithInkLine)
+  (moveBall, fallInSink, neighborBlocks, collideWithBlock, collideWithBall,
+  collideWithInkLine)
 
 type GameState =
   { balls    :: List Ball
@@ -87,7 +88,7 @@ nextState signal gameState =
 
     afterCollisionWithBlock :: Ball -> Ball
     afterCollisionWithBlock ball =
-      fromMaybe ball $ findMap (collideWithBlock ball) gameState.blocks
+      fromMaybe ball $ findMap (collideWithBlock ball) (neighborBlocks ball)
 
     afterCollisionWithInkLine :: Ball -> Ball
     afterCollisionWithInkLine ball =

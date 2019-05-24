@@ -7,8 +7,10 @@ module InkBall.GameObjects
   , Sink
   , InkLine
   , BallSource
+  , BoardCoordinate
   , mkInkDot
   , generateBlocks
+  , generateBlocksMap
   , generateSinks
   , generateBallSources
   ) where
@@ -16,6 +18,8 @@ module InkBall.GameObjects
 import Prelude
 
 import Data.Char.Unicode (toLower, isLower, isUpper)
+import Data.HashMap (HashMap)
+import Data.HashMap as HM
 import Data.Int (toNumber)
 import Data.List
   (List(..), head, concat, zip, toUnfoldable, filter, length, (..))
@@ -172,6 +176,14 @@ generateBlocks =
   where
     toBlock :: Tuple Char BoardCoordinate -> Block
     toBlock (Tuple c coor) = mkBlock coor (charToColor c)
+
+generateBlocksMap :: HashMap BoardCoordinate Block
+generateBlocksMap =
+  let blocksCells = filter (\(Tuple c _) -> isUpper c) enumBoard
+   in HM.fromFoldable $ map toBlock blocksCells
+  where
+    toBlock :: Tuple Char BoardCoordinate -> Tuple BoardCoordinate Block
+    toBlock (Tuple c coor) = Tuple coor (mkBlock coor (charToColor c))
 
 generateSinks :: Array Sink
 generateSinks =

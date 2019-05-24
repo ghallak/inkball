@@ -11,6 +11,7 @@ module InkBall.Geometry
   , circlesIntersect
   , multiplyByScalar
   , circlesTouchingPoint
+  , magnitude
   ) where
 
 import Prelude

@@ -1,6 +1,7 @@
 module InkBall.Physics
   ( moveBall
   , fallInSink
+  , neighborBlocks
   , collideWithBlock
   , collideWithBall
   , collideWithInkLine
@@ -8,16 +9,21 @@ module InkBall.Physics
 
 import Prelude
 
+import Data.Array (catMaybes)
+import Data.HashMap as HM
+import Data.Int (floor)
 import Data.Foldable (findMap)
 import Data.Maybe (Maybe(..))
 import Data.Ord (abs)
+import Math (acos, pi)
 
-import InkBall.Constants (blockSide)
+import InkBall.Constants (blockSide, betweenCells)
 import InkBall.GameObjects
-  (BlockSide(..), InkDot(..), Color(..), InkLine, Ball, Block, Sink)
+  (BlockSide(..), InkDot(..), Color(..), InkLine, Ball, Block, Sink,
+  BoardCoordinate, generateBlocksMap)
 import InkBall.Geometry
-  (pointToSegEnds, circleIntersectSeg, circlesIntersect, circlesTouchingPoint,
-  normalize, multiplyByScalar, dot)
+  (Vec, circleIntersectSeg, circlesIntersect, circlesTouchingPoint, normalize,
+  pointToSegEnds, multiplyByScalar, dot, magnitude)
 
 moveBall :: Ball -> Ball
 moveBall ball =
@@ -29,6 +35,42 @@ moveBall ball =
         }
       }
     }
+
+neighborBlocks :: Ball -> Array Block
+neighborBlocks ball =
+  let bc =
+        { col: floor $ (ball.circle.center.x - betweenCells) / (blockSide + betweenCells)
+        , row: floor $ (ball.circle.center.y - betweenCells) / (blockSide + betweenCells)
+        }
+      z = angle ball.velocity
+
+      rr = blockAt { row: bc.row    , col: bc.col + 1 }
+      rd = blockAt { row: bc.row + 1, col: bc.col + 1 }
+      dd = blockAt { row: bc.row + 1, col: bc.col     }
+      ld = blockAt { row: bc.row + 1, col: bc.col - 1 }
+      ll = blockAt { row: bc.row    , col: bc.col - 1 }
+      lu = blockAt { row: bc.row - 1, col: bc.col - 1 }
+      uu = blockAt { row: bc.row - 1, col: bc.col     }
+      ru = blockAt { row: bc.row - 1, col: bc.col + 1 }
+
+      check = catMaybes $
+        if      z >= 0.0            && z <= pi / 2.0       then [rr, rd, dd]
+        else if z >= pi / 2.0       && z <= pi             then [dd, ld, ll]
+        else if z >= pi             && z <= 3.0 * pi / 2.0 then [ll, lu, uu]
+        else if z >= 3.0 * pi / 2.0 && z <= 2.0 * pi       then [uu, ru, rr]
+        else []
+
+   in check
+  where
+    blockAt :: BoardCoordinate -> Maybe Block
+    blockAt coor = HM.lookup coor generateBlocksMap
+
+    angle :: Vec -> Number
+    angle v =
+      let theta = acos $ dot v { x: 1.0, y: 0.0 } / magnitude v
+          sign = if v.y > 0.0 then 1.0 else -1.0
+          result = theta * sign
+       in if result > 0.0 then result else 2.0 * pi + result
 
 collideWithBlock :: Ball -> Block -> Maybe Ball
 collideWithBlock ball block =
