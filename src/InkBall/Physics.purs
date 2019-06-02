@@ -11,19 +11,21 @@ import Prelude
 
 import Data.Array (catMaybes)
 import Data.HashMap as HM
-import Data.Int (floor)
+import Data.Int (floor, round)
 import Data.Foldable (findMap)
+import Data.List (List(..), concatMap, fromFoldable, (:))
 import Data.Maybe (Maybe(..))
 import Data.Ord (abs)
+import Data.Tuple (Tuple(..))
 import Math (acos, pi)
 
 import InkBall.Constants (blockSide, betweenCells)
 import InkBall.GameObjects
   (BlockSide(..), InkDot(..), Color(..), InkLine, Ball, Block, Sink,
-  BoardCoordinate, generateBlocksMap)
+  BoardCoordinate, generateBlocksMap, mkInkDot)
 import InkBall.Geometry
   (Vec, circleIntersectSeg, circlesIntersect, circlesTouchingPoint, normalize,
-  pointToSegEnds, multiplyByScalar, dot, magnitude)
+  pointToSegEnds, multiplyByScalar, dot, magnitude, pointsToQuadCurves, splitQuadCurve, quadCurveToSegments, circleIntersectSeg')
 
 moveBall :: Ball -> Ball
 moveBall ball =
@@ -131,11 +133,25 @@ collideWithBall ball ball' =
         then Just $ ball { velocity = ball'.velocity }
         else Nothing
 
+-- 1. convert inkline to a list of quad curves
+-- 2. split each one of the resulted quad curves into 4
+-- 3. convert each quad curves into list of segments
+-- 4. check collision against segments
+collideWithInkLine :: Ball -> InkLine -> Maybe Ball
+collideWithInkLine ball inkLine =
+  let curves = pointsToQuadCurves $ map (\(InkDot circle) -> circle.center) (fromFoldable inkLine)
+      curvesX4 = concatMap ((\(Tuple curve curve') -> (f $ splitQuadCurve curve) <> (f $ splitQuadCurve curve')) <<< splitQuadCurve) curves
+      segments = concatMap (f <<< quadCurveToSegments) curvesX4
+      intersectionPoint = findMap (circleIntersectSeg' ball.circle) segments
+   in case intersectionPoint of
+        Just point -> collideWithInkDot ball (mkInkDot { x: round point.x, y: round point.y })
+        Nothing -> Nothing
+  where
+    f :: forall a. Tuple a a -> List a
+    f (Tuple x y) = x : y : Nil
+
 -- https://gamedev.stackexchange.com/questions/112299/balls-velocity-vector-reflect-against-a-point
 -- https://www.gamasutra.com/view/feature/131424/pool_hall_lessons_fast_accurate_.php?page=3
-collideWithInkLine :: Ball -> InkLine -> Maybe Ball
-collideWithInkLine ball ink = findMap (collideWithInkDot ball) ink
-
 collideWithInkDot :: Ball -> InkDot -> Maybe Ball
 collideWithInkDot ball (InkDot inkDot) =
   let touchPoint = circlesTouchingPoint ball.circle inkDot

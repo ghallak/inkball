@@ -8,10 +8,14 @@ module InkBall.Geometry
   , dot
   , pointToSegEnds
   , circleIntersectSeg
+  , circleIntersectSeg'
   , circlesIntersect
   , multiplyByScalar
   , circlesTouchingPoint
   , magnitude
+  , pointsToQuadCurves
+  , splitQuadCurve
+  , quadCurveToSegments
   ) where
 
 import Prelude
@@ -90,6 +94,13 @@ circleIntersectSeg :: Circle -> Segment -> Boolean
 circleIntersectSeg circle seg =
   let closestPoint = closestPointOnSeg circle.center seg
    in distance circle.center closestPoint ~<= circle.radius
+
+circleIntersectSeg' :: Circle -> Segment -> Maybe Point
+circleIntersectSeg' circle seg =
+  let closestPoint = closestPointOnSeg circle.center seg
+   in if distance circle.center closestPoint ~<= circle.radius
+        then Just closestPoint
+        else Nothing
 
 circlesIntersect :: Circle -> Circle -> Boolean
 circlesIntersect circleA circleB =
@@ -173,3 +184,32 @@ pointsToQuadCurves points =
       , end: end
       , control: control
       }
+
+splitQuadCurve :: QuadraticCurve -> Tuple QuadraticCurve QuadraticCurve
+splitQuadCurve curve =
+  let q1 = middlePoint curve.start curve.control
+      q2 = middlePoint curve.control curve.end
+      q3 = middlePoint q1 q2
+      curveA =
+        { start: curve.start
+        , control: q1
+        , end: q3
+        }
+      curveB =
+        { start: q3
+        , control: q2
+        , end: curve.end
+        }
+   in Tuple curveA curveB
+
+quadCurveToSegments :: QuadraticCurve -> Tuple Segment Segment
+quadCurveToSegments curve =
+  let segmentA =
+        { p: curve.start
+        , q: curve.control
+        }
+      segmentB =
+        { p: curve.control
+        , q: curve.end
+        }
+   in Tuple segmentA segmentB
