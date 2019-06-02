@@ -88,6 +88,8 @@ drawInkLine ctx inkLine = do
       C.lineTo ctx firstPoint.x firstPoint.y
       C.stroke ctx
     _ -> do
+      -- this is an implementation of this stack overflow answer:
+      -- https://stackoverflow.com/a/7058606/942396
       let uselessPoint = mkInkDot { x: 500, y: 500 } -- TODO: delete later
           firstPoint = inkDotToPoint <<< fromMaybe uselessPoint $ head inkLine
           lastPoint = inkDotToPoint <<< fromMaybe uselessPoint $ last inkLine

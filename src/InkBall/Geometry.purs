@@ -18,6 +18,8 @@ import Prelude
 
 import Data.Foldable (all)
 import Data.Maybe (Maybe(..))
+import Data.List (List(..), head, last, length, slice, zip, zipWith, snoc, (:))
+import Data.Tuple (Tuple(..))
 import Math (abs, pow, sqrt)
 
 type Point =
@@ -45,6 +47,12 @@ type Square =
   , side    :: Number
   }
 
+type QuadraticCurve =
+  { start   :: Point
+  , end     :: Point
+  , control :: Point
+  }
+
 infixl 4 almostEqualTo as ~==
 
 almostEqualTo :: Number -> Number -> Boolean
@@ -68,6 +76,9 @@ normalize v =
 
 distance :: Point -> Point -> Number
 distance p q = sqrt (pow (p.x - q.x) 2.0 + pow (p.y - q.y) 2.0)
+
+middlePoint :: Point -> Point -> Point
+middlePoint p q = (p + q) * { x: 0.5, y: 0.5 }
 
 multiplyByScalar :: Vec -> Number -> Vec
 multiplyByScalar v s = {x: v.x * s, y: v.y * s}
@@ -134,3 +145,31 @@ circlesTouchingPoint circle circle' =
       radiusesSum = circle'.radius + circle.radius
       point = { x: circle.radius / radiusesSum, y : circle.radius / radiusesSum }
    in circle.center + (centersDiff * point)
+
+-- start = 0                           end = (1 + 2) / 2     control = 1
+-- start = (1 + 2) / 2                 end = (2 + 3) / 2     control = 2
+-- start = (2 + 3) / 2                 end = (3 + 4) / 2     control = 3
+-- .                                   .                     .
+-- .                                   .                     .
+-- start = ((n - 3) + (n - 2)) / 2     end = n - 1           control = n - 2
+pointsToQuadCurves :: List Point -> List QuadraticCurve
+pointsToQuadCurves points =
+  case Tuple (head points) (last points) of
+    Tuple (Just headPoint) (Just lastPoint) ->
+      let n = length points
+          slice1 = slice 1 (n - 3) points
+          slice2 = slice 2 (n - 2) points
+          midPoints = zipWith middlePoint slice1 slice2
+
+          startPoints = headPoint : midPoints
+          endPoints = snoc midPoints lastPoint
+          controlPoints = slice 1 (n - 2) points
+       in map toQuadCurve $ zip (zip startPoints endPoints) controlPoints
+    _ -> Nil
+  where
+    toQuadCurve :: Tuple (Tuple Point Point) Point -> QuadraticCurve
+    toQuadCurve (Tuple (Tuple start end) control) =
+      { start: start
+      , end: end
+      , control: control
+      }
