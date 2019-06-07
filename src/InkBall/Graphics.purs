@@ -21,6 +21,13 @@ import InkBall.GameObjects
 import InkBall.Geometry (Square, Circle)
 import InkBall.State (GameStatus(..), GameState)
 
+-- | Draw the background (everything that is not changing between frames).
+-- |
+-- | This function draws on a separate canvas called "canvas-static" all the
+-- | elements that are static.
+-- |
+-- | Check the following link for the reason behind using static canvas layer:
+-- | https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Optimizing_canvas#Use_multiple_layered_canvases_for_complex_scenes
 drawBackground :: Effect Unit
 drawBackground = do
   mcanvas <- C.getCanvasElementById "canvas-static"
@@ -41,6 +48,7 @@ drawBackground = do
       foreachE generateBallSources (drawBallSource ctx)
     Nothing -> pure unit
 
+-- | Draw the foreground (everything that can change between frames).
 drawForeground :: GameState -> Effect Unit
 drawForeground gameState = do
   mcanvas <- C.getCanvasElementById "canvas-dynamic"
