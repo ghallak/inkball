@@ -38,6 +38,11 @@ moveBall ball =
       }
     }
 
+-- | Return an array of a the neighboring blocks of a given ball that the ball
+-- | might collide with.
+-- |
+-- | A ball can collide with one of three neighboring blocks depending on its
+-- | direction.
 neighborBlocks :: Ball -> Array Block
 neighborBlocks ball =
   let bc =
@@ -74,6 +79,9 @@ neighborBlocks ball =
           result = theta * sign
        in if result > 0.0 then result else 2.0 * pi + result
 
+-- | Check if a ball collides with a given block, return `Just ball` where
+-- | `ball` is the same as the old ball but with a new direction if the ball
+-- | collides with the block, return `Nothing` if they don't collide.
 collideWithBlock :: Ball -> Block -> Maybe Ball
 collideWithBlock ball block =
   case detectSide of
@@ -123,9 +131,13 @@ changeDirection ball BottomSide = ball { velocity { y = abs ball.velocity.y } }
 changeDirection ball LeftSide   = ball { velocity { x = negate $ abs ball.velocity.x } }
 changeDirection ball RightSide  = ball { velocity { x = abs ball.velocity.x } }
 
+-- | Check whether a given ball falls in a given sink or not.
 fallInSink :: Sink -> Ball -> Boolean
 fallInSink sink ball = circlesIntersect sink.circle ball.circle
 
+-- | Check whether a ball collides with another ball, return `Just ball` if the
+-- | two balls collide where `ball` is the first given ball with its direction
+-- | changed, return `Nothing` if the balls don't collide.
 collideWithBall :: Ball -> Ball -> Maybe Ball
 collideWithBall ball ball' =
   let ballsCollide = circlesIntersect ball.circle ball'.circle

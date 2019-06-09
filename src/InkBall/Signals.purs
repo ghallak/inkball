@@ -108,6 +108,7 @@ mousePosWhenClicked pressed posChannel coor = do
           validY = coordinatePair.y >= 0 && coordinatePair.y <= round canvasSide
        in validX && validY
 
+-- | Return the coordinates of the top-left point of the canvas.
 canvasOffset :: Effect CoordinatePair
 canvasOffset = do
   win <- window

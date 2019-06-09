@@ -169,6 +169,9 @@ enumBoard =
     enumerate :: forall a. List a -> List Int
     enumerate xs = 0..(length xs - 1)
 
+-- | Create an array of the blocks on the given board.
+-- |
+-- | The blocks are all the board elements with an upper alphabetical character.
 generateBlocks :: Array Block
 generateBlocks =
   let blocksCells = filter (\(Tuple c _) -> isUpper c) enumBoard
@@ -185,6 +188,9 @@ generateBlocksMap =
     toBlock :: Tuple Char BoardCoordinate -> Tuple BoardCoordinate Block
     toBlock (Tuple c coor) = Tuple coor (mkBlock coor (charToColor c))
 
+-- | Create an array of the sinks on the given board.
+-- |
+-- | The sinks are all the board elements with a lower alphabetical character.
 generateSinks :: Array Sink
 generateSinks =
   let sinksCells = filter (\(Tuple c _) -> isLower c) enumBoard
@@ -193,6 +199,9 @@ generateSinks =
     toSink :: Tuple Char BoardCoordinate -> Sink
     toSink (Tuple c coor) = mkSink coor (charToColor c)
 
+-- | Create an array of the ball sources on the given board.
+-- |
+-- | The ball sources are all the board elements with a `@` character.
 generateBallSources :: Array BallSource
 generateBallSources =
   let ballSourcesCells = filter (\(Tuple c _) -> c == '@') enumBoard

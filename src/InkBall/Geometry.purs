@@ -67,34 +67,44 @@ infixl 4 almostLessThanOrEqualTo as ~<=
 almostLessThanOrEqualTo :: Number -> Number -> Boolean
 almostLessThanOrEqualTo x y = x ~== y || x < y
 
+-- | Calculate the dot product of two vectors.
 dot :: Vec -> Vec -> Number
 dot v v' = v.x * v'.x + v.y * v'.y
 
+-- | Return the magnitude of a vector
 magnitude :: Vec -> Number
 magnitude v = sqrt (pow v.x 2.0 + pow v.y 2.0)
 
+-- | Return the normalized vector of a given vector (or the unit vector in the
+-- | direction of the given vector).
 normalize :: Vec -> Vec
 normalize v =
   let mag = magnitude v
    in {x: v.x / mag, y: v.y / mag}
 
+-- | The Euclidean distance between two points.
 distance :: Point -> Point -> Number
 distance p q = sqrt (pow (p.x - q.x) 2.0 + pow (p.y - q.y) 2.0)
 
+-- | Find the point between two given points.
 middlePoint :: Point -> Point -> Point
 middlePoint p q = (p + q) * { x: 0.5, y: 0.5 }
 
 multiplyByScalar :: Vec -> Number -> Vec
 multiplyByScalar v s = {x: v.x * s, y: v.y * s}
 
+-- | Add a point to a vector and return the new point.
 pointPlusVec :: Point -> Vec -> Point
 pointPlusVec p v = {x: p.x + v.x, y: p.y + v.y}
 
+-- | Check whether a circle intersects with a line segment.
 circleIntersectSeg :: Circle -> Segment -> Boolean
 circleIntersectSeg circle seg =
   let closestPoint = closestPointOnSeg circle.center seg
    in distance circle.center closestPoint ~<= circle.radius
 
+-- | Find the point where a circle and a line segment intersect, or return
+-- | `Nothing` if they do not intersect.
 circleIntersectSeg' :: Circle -> Segment -> Maybe Point
 circleIntersectSeg' circle seg =
   let closestPoint = closestPointOnSeg circle.center seg
@@ -102,18 +112,24 @@ circleIntersectSeg' circle seg =
         then Just closestPoint
         else Nothing
 
+-- | Check whether two circles intersect.
 circlesIntersect :: Circle -> Circle -> Boolean
 circlesIntersect circleA circleB =
   let distBetweenCenters = distance circleA.center circleB.center
       sumRadiuses = circleA.radius + circleB.radius
    in distBetweenCenters ~<= sumRadiuses
 
+-- | Check whether a point in inside a circle (or at its radius).
 pointInCircle :: Circle -> Point -> Boolean
 pointInCircle circle p = distance p circle.center ~<= circle.radius
 
+-- | Check whether all vertices of a square are inside a circle (or at its
+-- | radius).
 squareInsideCircle :: Square -> Circle -> Boolean
 squareInsideCircle square circle = all (pointInCircle circle) (vertices square)
 
+-- | Return the four vertices of a square:
+-- | Top-left, Top-right, Bottom-left, Bottom-right
 vertices :: Square -> Array Point
 vertices sq =
   let topLeftVertex = sq.topLeft
@@ -122,6 +138,7 @@ vertices sq =
       bottomRightVertex = sq.topLeft + {x: sq.side, y: sq.side}
    in [topLeftVertex, topRightVertex, bottomLeftVertex, bottomRightVertex]
 
+-- | Check whether a point is located on a line segment.
 pointOnSeg :: Point -> Segment -> Boolean
 pointOnSeg point seg =
   let pointToP = distance point seg.p
@@ -129,9 +146,15 @@ pointOnSeg point seg =
       segLength = distance seg.p seg.q
    in pointToP + pointToQ ~== segLength
 
+-- | Calculate the sum of the distances between a point and the two ends of
+-- | a line segment.
 pointToSegEnds :: Point -> Segment -> Number
 pointToSegEnds point seg = distance seg.p point + distance seg.q point
 
+-- | Find the closest points from a line segment to a given point.
+-- |
+-- | The closest point can either be the projection of the given point on the
+-- | line segment, or the closest of the segment ends to the given point.
 closestPointOnSeg :: Point -> Segment -> Point
 closestPointOnSeg point seg =
   let closestEndOnSeg = if distance seg.p point < distance seg.q point
@@ -141,6 +164,10 @@ closestPointOnSeg point seg =
         Just p  -> p
         Nothing -> closestEndOnSeg
 
+-- | Project a point on a given line segment, or return `Nothing` if the given
+-- | point can't be project on the given segment (if the project of the given
+-- | point on the line containing the given segment does not belong to the
+-- | given segment).
 projectPointOnSeg :: Point -> Segment -> Maybe Point
 projectPointOnSeg c seg =
   let pq = seg.q - seg.p
@@ -150,6 +177,10 @@ projectPointOnSeg c seg =
         then Just p
         else Nothing
 
+-- | Return the single point in which two circles intersect.
+-- |
+-- | Note: This function assumes that the two given points do intersect at
+-- | some point.
 circlesTouchingPoint :: Circle -> Circle -> Point
 circlesTouchingPoint circle circle' =
   let centersDiff = circle'.center - circle.center
