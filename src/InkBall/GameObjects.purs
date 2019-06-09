@@ -26,7 +26,7 @@ import Data.List
 import Data.Maybe (fromMaybe)
 import Data.Tuple (Tuple(..))
 
-import InkBall.Boards (board)
+import InkBall.Boards (Board)
 import InkBall.Constants
   (betweenCells, ballRadius, blockSide, inkRadius, sinkSide, sinkHoleRadius,
   ballSourceRadius)
@@ -158,8 +158,8 @@ mkBallSource coor =
           }
       }
 
-enumBoard :: List (Tuple Char BoardCoordinate)
-enumBoard =
+enumBoard :: Board -> List (Tuple Char BoardCoordinate)
+enumBoard board =
   let rows = enumerate board
       cols = enumerate (fromMaybe Nil (head board))
       flatBoard = concat board
@@ -172,17 +172,17 @@ enumBoard =
 -- | Create an array of the blocks on the given board.
 -- |
 -- | The blocks are all the board elements with an upper alphabetical character.
-generateBlocks :: Array Block
-generateBlocks =
-  let blocksCells = filter (\(Tuple c _) -> isUpper c) enumBoard
+generateBlocks :: Board -> Array Block
+generateBlocks board =
+  let blocksCells = filter (\(Tuple c _) -> isUpper c) (enumBoard board)
    in toUnfoldable $ map toBlock blocksCells
   where
     toBlock :: Tuple Char BoardCoordinate -> Block
     toBlock (Tuple c coor) = mkBlock coor (charToColor c)
 
-generateBlocksMap :: HashMap BoardCoordinate Block
-generateBlocksMap =
-  let blocksCells = filter (\(Tuple c _) -> isUpper c) enumBoard
+generateBlocksMap :: Board -> HashMap BoardCoordinate Block
+generateBlocksMap board =
+  let blocksCells = filter (\(Tuple c _) -> isUpper c) (enumBoard board)
    in HM.fromFoldable $ map toBlock blocksCells
   where
     toBlock :: Tuple Char BoardCoordinate -> Tuple BoardCoordinate Block
@@ -191,9 +191,9 @@ generateBlocksMap =
 -- | Create an array of the sinks on the given board.
 -- |
 -- | The sinks are all the board elements with a lower alphabetical character.
-generateSinks :: Array Sink
-generateSinks =
-  let sinksCells = filter (\(Tuple c _) -> isLower c) enumBoard
+generateSinks :: Board -> Array Sink
+generateSinks board =
+  let sinksCells = filter (\(Tuple c _) -> isLower c) (enumBoard board)
    in toUnfoldable $ map toSink sinksCells
   where
     toSink :: Tuple Char BoardCoordinate -> Sink
@@ -202,9 +202,9 @@ generateSinks =
 -- | Create an array of the ball sources on the given board.
 -- |
 -- | The ball sources are all the board elements with a `@` character.
-generateBallSources :: Array BallSource
-generateBallSources =
-  let ballSourcesCells = filter (\(Tuple c _) -> c == '@') enumBoard
+generateBallSources :: Board -> Array BallSource
+generateBallSources board =
+  let ballSourcesCells = filter (\(Tuple c _) -> c == '@') (enumBoard board)
    in toUnfoldable $ map toBallSource ballSourcesCells
   where
     toBallSource :: Tuple Char BoardCoordinate -> BallSource

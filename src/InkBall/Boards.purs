@@ -1,16 +1,34 @@
 module InkBall.Boards
   ( Board
-  , board
+  , randomBoard
   ) where
 
 import Prelude
 
+import Data.Array (length, (!!))
 import Data.List (List, fromFoldable)
+import Data.Maybe (Maybe(..))
+import Effect (Effect)
+import Effect.Random (randomInt)
 
 type Board = List (List Char)
 
-board :: Board
-board = fromFoldable <<< map fromFoldable $
+-- | Choose one of the game boards randomly.
+randomBoard :: Effect Board
+randomBoard = do
+  randomBoardIndex <- randomInt 0 (length boards - 1)
+  case boards !! randomBoardIndex of
+    Just board -> pure board
+    Nothing -> pure board0
+
+-- | Array of game boards.
+-- |
+-- | To add a board to the game, it must be added to this array.
+boards :: Array Board
+boards = [board0, board1]
+
+board0 :: Board
+board0 = fromFoldable <<< map fromFoldable $
   [ [ 'W','W','W','W','W','W','R','R','R','R','R','W','W','W','W','W','W' ]
   , [ 'W','@','W','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
   , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
@@ -27,5 +45,26 @@ board = fromFoldable <<< map fromFoldable $
   , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
   , [ 'W','.','@','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
   , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
+  , [ 'W','G','G','G','G','G','W','W','W','W','W','W','W','W','W','W','W' ]
+  ]
+
+board1 :: Board
+board1 = fromFoldable <<< map fromFoldable $
+  [ [ 'W','W','W','W','W','W','R','R','R','R','R','W','W','W','W','W','W' ]
+  , [ 'W','g','.','W','.','.','.','.','.','.','.','.','.','.','.','@','W' ]
+  , [ 'W','.','.','W','.','.','.','.','.','.','.','.','.','.','.','.','W' ]
+  , [ 'W','.','.','W','.','.','.','.','.','.','.','.','W','W','W','W','W' ]
+  , [ 'W','.','.','W','W','W','.','.','.','.','.','.','W','.','.','.','W' ]
+  , [ 'W','.','.','.','.','W','.','.','W','.','.','.','W','.','.','.','W' ]
+  , [ 'W','.','.','.','.','W','.','.','W','.','.','.','W','.','.','.','W' ]
+  , [ 'W','.','.','.','.','W','.','.','W','.','.','.','.','.','.','.','W' ]
+  , [ 'W','.','.','.','.','.','.','.','W','.','.','.','.','.','.','.','W' ]
+  , [ 'W','.','.','.','.','.','.','.','W','.','.','.','.','.','.','.','W' ]
+  , [ 'W','W','W','W','.','.','.','.','W','.','.','.','.','.','.','.','W' ]
+  , [ 'W','.','.','W','.','.','.','.','W','.','.','.','.','W','.','.','W' ]
+  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','W','.','.','W' ]
+  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','W','.','.','W' ]
+  , [ 'W','.','.','.','.','.','.','.','.','.','.','.','.','W','b','.','W' ]
+  , [ 'W','@','.','.','.','.','.','.','.','.','.','.','.','W','.','.','W' ]
   , [ 'W','G','G','G','G','G','W','W','W','W','W','W','W','W','W','W','W' ]
   ]

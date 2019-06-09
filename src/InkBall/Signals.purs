@@ -24,21 +24,22 @@ import Web.HTML.HTMLDocument (toDocument)
 import Web.HTML.HTMLElement (fromElement, offsetLeft, offsetTop)
 import Web.HTML.Window (document)
 
+import InkBall.Boards (Board)
 import InkBall.Constants (canvasSide, ballRadius)
 import InkBall.GameObjects (Color(..), Ball, generateBallSources, generateSinks)
 import InkBall.State (SignalSum(..), GameState, nextState, initialState)
 
-gameSignal :: Signal SignalSum -> Signal GameState
-gameSignal signal = foldp nextState initialState signal
+gameSignal :: Board -> Signal SignalSum -> Signal GameState
+gameSignal board signal = foldp nextState (initialState board) signal
 
-launchBallSignal :: Effect (Signal SignalSum)
-launchBallSignal = do
+launchBallSignal :: Board -> Effect (Signal SignalSum)
+launchBallSignal board = do
   ballsChannel <- channel Nothing
-  runSignal $ every 3000.0 ~> \_ -> randomBallsGenerator ballsChannel
+  runSignal $ every 3000.0 ~> \_ -> randomBallsGenerator board ballsChannel
   pure $ LaunchBall <$> subscribe ballsChannel
 
-randomBallsGenerator :: Channel (Maybe Ball) -> Effect Unit
-randomBallsGenerator ballsChannel = do
+randomBallsGenerator :: Board -> Channel (Maybe Ball) -> Effect Unit
+randomBallsGenerator board ballsChannel = do
   let sampleBall =
         { circle:
             { center: { x: 100.0, y: 100.0 }
@@ -48,15 +49,16 @@ randomBallsGenerator ballsChannel = do
         , color: Red
         }
 
-  let sinksColors = map (\sink -> sink.color) generateSinks
+  let sinksColors = map (\sink -> sink.color) (generateSinks board)
   randomColorIndex <- randomInt 0 (length sinksColors - 1)
   let ballColor = case sinksColors !! randomColorIndex of
                     Just color -> color
                     Nothing -> White
   angle <- randomRange (-pi) pi
-  randomBallSourceIndex <- randomInt 0 (length generateBallSources - 1)
+  let ballSources = generateBallSources board
+  randomBallSourceIndex <- randomInt 0 (length ballSources - 1)
 
-  case generateBallSources !! randomBallSourceIndex of
+  case ballSources !! randomBallSourceIndex of
     Just ballSource ->
       let vel = sampleBall.velocity
           ballCenter = ballSource.circle.center

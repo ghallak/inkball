@@ -14,6 +14,7 @@ import Effect (Effect, foreachE)
 import Graphics.Canvas as C
 import Math (pi)
 
+import InkBall.Boards (Board)
 import InkBall.Constants (canvasSide)
 import InkBall.GameObjects
   (Color(..), InkDot(..), Ball, Block, InkLine, Sink, BallSource, mkInkDot,
@@ -28,8 +29,8 @@ import InkBall.State (GameStatus(..), GameState)
 -- |
 -- | Check the following link for the reason behind using static canvas layer:
 -- | https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Optimizing_canvas#Use_multiple_layered_canvases_for_complex_scenes
-drawBackground :: Effect Unit
-drawBackground = do
+drawBackground :: Board -> Effect Unit
+drawBackground board = do
   mcanvas <- C.getCanvasElementById "canvas-static"
   case mcanvas of
     Just canvas -> do
@@ -43,9 +44,9 @@ drawBackground = do
         , width:  canvasSide
         , height: canvasSide
         }
-      foreachE generateBlocks (drawBlock ctx)
-      foreachE generateSinks (drawSink ctx)
-      foreachE generateBallSources (drawBallSource ctx)
+      foreachE (generateBlocks board) (drawBlock ctx)
+      foreachE (generateSinks board) (drawSink ctx)
+      foreachE (generateBallSources board) (drawBallSource ctx)
     Nothing -> pure unit
 
 -- | Draw the foreground (everything that can change between frames).

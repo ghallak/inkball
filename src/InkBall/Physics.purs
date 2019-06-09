@@ -19,6 +19,7 @@ import Data.Ord (abs)
 import Data.Tuple (Tuple(..))
 import Math (acos, pi)
 
+import InkBall.Boards (Board)
 import InkBall.Constants (blockSide, betweenCells)
 import InkBall.GameObjects
   (BlockSide(..), InkDot(..), Color(..), InkLine, Ball, Block, Sink,
@@ -43,8 +44,8 @@ moveBall ball =
 -- |
 -- | A ball can collide with one of three neighboring blocks depending on its
 -- | direction.
-neighborBlocks :: Ball -> Array Block
-neighborBlocks ball =
+neighborBlocks :: Board -> Ball -> Array Block
+neighborBlocks board ball =
   let bc =
         { col: floor $ (ball.circle.center.x - betweenCells) / (blockSide + betweenCells)
         , row: floor $ (ball.circle.center.y - betweenCells) / (blockSide + betweenCells)
@@ -70,7 +71,7 @@ neighborBlocks ball =
    in check
   where
     blockAt :: BoardCoordinate -> Maybe Block
-    blockAt coor = HM.lookup coor generateBlocksMap
+    blockAt coor = HM.lookup coor (generateBlocksMap board)
 
     angle :: Vec -> Number
     angle v =

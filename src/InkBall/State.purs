@@ -15,6 +15,7 @@ import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Data.NonEmpty (singleton, (:|))
 import Signal.DOM (CoordinatePair)
 
+import InkBall.Boards (Board)
 import InkBall.GameObjects
   (Block, Sink, Ball, InkLine, mkInkDot, generateBlocks, generateSinks)
 import InkBall.Physics
@@ -22,7 +23,8 @@ import InkBall.Physics
   collideWithInkLine)
 
 type GameState =
-  { balls    :: List Ball
+  { board    :: Board
+  , balls    :: List Ball
   , blocks   :: List Block
   , sinks    :: List Sink
   , inkLines :: NE.NonEmptyList InkLine
@@ -40,11 +42,12 @@ data GameStatus
 
 derive instance eqGameStatus :: Eq GameStatus
 
-initialState :: GameState
-initialState =
-  { balls: Nil
-  , blocks: fromFoldable generateBlocks
-  , sinks: fromFoldable generateSinks
+initialState :: Board -> GameState
+initialState board =
+  { board: board
+  , balls: Nil
+  , blocks: fromFoldable $ generateBlocks board
+  , sinks: fromFoldable $ generateSinks board
   , inkLines: NE.NonEmptyList (singleton [])
   , status: Playing
   }
@@ -88,7 +91,8 @@ nextState signal gameState =
 
     afterCollisionWithBlock :: Ball -> Ball
     afterCollisionWithBlock ball =
-      fromMaybe ball $ findMap (collideWithBlock ball) (neighborBlocks ball)
+      fromMaybe ball $
+        findMap (collideWithBlock ball) (neighborBlocks gameState.board ball)
 
     afterCollisionWithInkLine :: Ball -> Ball
     afterCollisionWithInkLine ball =
