@@ -10,6 +10,7 @@ module InkBall.Physics
 import Prelude
 
 import Data.Array (catMaybes)
+import Data.HashMap (HashMap)
 import Data.HashMap as HM
 import Data.Int (floor, round)
 import Data.Foldable (findMap)
@@ -44,8 +45,8 @@ moveBall ball =
 -- |
 -- | A ball can collide with one of three neighboring blocks depending on its
 -- | direction.
-neighborBlocks :: Board -> Ball -> Array Block
-neighborBlocks board ball =
+neighborBlocks :: HashMap BoardCoordinate Block -> Ball -> Array Block
+neighborBlocks boardMap ball =
   let bc =
         { col: floor $ (ball.circle.center.x - betweenCells) / (blockSide + betweenCells)
         , row: floor $ (ball.circle.center.y - betweenCells) / (blockSide + betweenCells)
@@ -71,7 +72,7 @@ neighborBlocks board ball =
    in check
   where
     blockAt :: BoardCoordinate -> Maybe Block
-    blockAt coor = HM.lookup coor (generateBlocksMap board)
+    blockAt coor = HM.lookup coor boardMap
 
     angle :: Vec -> Number
     angle v =

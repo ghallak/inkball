@@ -9,6 +9,7 @@ module InkBall.State
 import Prelude
 
 import Data.Foldable (findMap, foldr, any, null)
+import Data.HashMap (HashMap)
 import Data.List (List(..), fromFoldable, filter, (:))
 import Data.List.NonEmpty as NE
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
@@ -17,13 +18,15 @@ import Signal.DOM (CoordinatePair)
 
 import InkBall.Boards (Board)
 import InkBall.GameObjects
-  (Block, Sink, Ball, InkLine, mkInkDot, generateBlocks, generateSinks)
+  (BoardCoordinate, Block, Sink, Ball, InkLine, mkInkDot, generateBlocks,
+  generateSinks, generateBlocksMap)
 import InkBall.Physics
   (moveBall, fallInSink, neighborBlocks, collideWithBlock, collideWithBall,
   collideWithInkLine)
 
 type GameState =
   { board    :: Board
+  , boardMap :: HashMap BoardCoordinate Block
   , balls    :: List Ball
   , blocks   :: List Block
   , sinks    :: List Sink
@@ -45,6 +48,7 @@ derive instance eqGameStatus :: Eq GameStatus
 initialState :: Board -> GameState
 initialState board =
   { board: board
+  , boardMap: generateBlocksMap board
   , balls: Nil
   , blocks: fromFoldable $ generateBlocks board
   , sinks: fromFoldable $ generateSinks board
@@ -92,7 +96,7 @@ nextState signal gameState =
     afterCollisionWithBlock :: Ball -> Ball
     afterCollisionWithBlock ball =
       fromMaybe ball $
-        findMap (collideWithBlock ball) (neighborBlocks gameState.board ball)
+        findMap (collideWithBlock ball) (neighborBlocks gameState.boardMap ball)
 
     afterCollisionWithInkLine :: Ball -> Ball
     afterCollisionWithInkLine ball =
